@@ -1,0 +1,526 @@
+"""
+Converts humanized NPZ joint-angle trajectories into cleaned HDF5 files
+compatible with the LIBERO -> RLDS pipeline.
+
+This script replays humanized joint angles through the LIBERO simulation
+using a JOINT_POSITION controller (same approach as A_libero_joint_replay.py),
+renders 256x256 images from both cameras, and outputs cleaned HDF5 files
+in the same format as regenerate_libero_dataset.py.
+
+NPZ format (per demo):
+    Located at: <task_root>/humanized/demo_XX/humanized.npz
+    Keys:
+      - task_name:          str, e.g. "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it"
+      - demo_idx:           int, index of the original demo
+      - joint_states_demo:  (T, 7) float32, original demo joint angles
+      - joint_states_human: (T, 7) float64, humanized joint angles
+
+    Gripper commands are taken from the original HDF5 demo's actions[:, 6].
+
+Pipeline:
+    1. For each NPZ in <task_root>/humanized/demo_XX/humanized.npz:
+       a. Load humanized joint angles + original demo's gripper actions & initial state
+       b. Replay in LIBERO env with JOINT_POSITION controller at 256x256
+       c. Record observations (agentview_rgb, eye_in_hand_rgb, ee_states, etc.)
+       d. Store original EEF delta actions from the original demo (7D)
+       e. Optionally filter no-op transitions
+       f. Write cleaned HDF5
+
+    2. Then use rlds_dataset_builder/ to convert HDF5 -> RLDS TFRecord.
+
+Usage (single task):
+    python experiments/robot/libero/npz_to_hdf5.py \
+        --libero_task_suite libero_10 \
+        --task_root /home/vsp1323/LIBERO/KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it_demo \
+        --libero_raw_data_dir ./LIBERO/libero/datasets/libero_10 \
+        --output_dir ./LIBERO/libero/datasets/libero_10_humanized_no_noops \
+        --filter_noops
+
+Usage (all tasks in a directory):
+    python experiments/robot/libero/npz_to_hdf5.py \
+        --libero_task_suite libero_10 \
+        --task_roots_dir /home/vsp1323/LIBERO \
+        --libero_raw_data_dir ./LIBERO/libero/datasets/libero_10 \
+        --output_dir ./LIBERO/libero/datasets/libero_10_humanized_no_noops \
+        --filter_noops
+"""
+
+import argparse
+import glob
+import json
+import os
+import time
+from collections import defaultdict
+
+import h5py
+import numpy as np
+import robosuite.utils.transform_utils as T
+import tqdm
+from libero.libero import benchmark, get_libero_path
+from libero.libero.envs import OffScreenRenderEnv
+from robosuite.controllers import load_controller_config
+
+IMAGE_RESOLUTION = 256
+
+
+# =====================================================================
+# Utilities (adapted from A_libero_joint_replay.py)
+# =====================================================================
+
+def is_noop(action, prev_action=None, threshold=1e-4):
+    """Same no-op filter as regenerate_libero_dataset.py."""
+    if prev_action is None:
+        return np.linalg.norm(action[:-1]) < threshold
+    gripper_action = action[-1]
+    prev_gripper_action = prev_action[-1]
+    return np.linalg.norm(action[:-1]) < threshold and gripper_action == prev_gripper_action
+
+
+def get_base_env(env):
+    """Unwrap to the innermost robosuite env."""
+    e = env
+    for _ in range(20):
+        if hasattr(e, "env"):
+            e = e.env
+        elif hasattr(e, "_wrapped_env"):
+            e = e._wrapped_env
+        else:
+            break
+    return e
+
+
+def get_panda_arm_qpos_indices(sim):
+    """Get qpos indices for the 7 Panda arm joints."""
+    model = sim.model
+    indices = []
+    for i in range(1, 8):
+        jname = f"robot0_joint{i}"
+        jid = model.joint_name2id(jname)
+        addr = model.jnt_qposadr[jid]
+        indices.append(addr)
+    return indices
+
+
+def dq_limits_from_joint_states(joint_states, margin=50.0):
+    """Compute per-joint dq limits from trajectory, with generous margin."""
+    dq = np.abs(np.diff(joint_states, axis=0))
+    dq_lim = np.maximum(dq.max(axis=0), 1e-4) * margin
+    return dq_lim.astype(np.float32)
+
+
+def joints_target_to_action(sim, base_env, raw_data, arm_qpos_idx, q_target_7, g_cmd, action_dim):
+    """
+    Build normalized action for JOINT_POSITION controller.
+    action[:7] = normalized dq in [-1, 1]
+    action[7]  = gripper cmd in [-1, 1]
+    """
+    robot = base_env.robots[0]
+    ctrl = robot.controller
+
+    q_cur = raw_data.qpos[np.array(arm_qpos_idx, dtype=np.int32)].astype(np.float32)
+    dq_des = np.array(q_target_7, dtype=np.float32) - q_cur
+
+    if ctrl is not None and hasattr(ctrl, "output_max"):
+        dq_max = np.array(ctrl.output_max, dtype=np.float32).reshape(-1)[:7]
+        dq_max = np.maximum(dq_max, 1e-6)
+    else:
+        dq_max = np.ones(7, dtype=np.float32) * 0.05
+
+    u = np.clip(dq_des / dq_max, -1.0, 1.0).astype(np.float32)
+
+    action = np.zeros(action_dim, dtype=np.float32)
+    action[:7] = u
+    action[7] = g_cmd
+    return action
+
+
+def unwrap_mj(sim):
+    """Get raw MuJoCo model/data handles."""
+    def raw_of(obj):
+        if obj is None:
+            return None
+        for attr in ["_model", "_data"]:
+            if hasattr(obj, attr):
+                return getattr(obj, attr)
+        return obj
+
+    candidates = [sim]
+    for attr in ["sim", "_sim", "_mj_sim"]:
+        if hasattr(sim, attr):
+            candidates.append(getattr(sim, attr))
+
+    for s in candidates:
+        m = getattr(s, "model", None) or getattr(s, "_model", None)
+        d = getattr(s, "data", None) or getattr(s, "_data", None)
+        rm = raw_of(m) if m else None
+        rd = raw_of(d) if d else None
+        if rm is not None and rd is not None:
+            return rm, rd
+
+    raise RuntimeError(f"Cannot unwrap MuJoCo model/data from sim={type(sim)}")
+
+
+def get_action_bounds(env):
+    """Get action space bounds from env."""
+    e = env
+    for _ in range(20):
+        if hasattr(e, "action_space"):
+            sp = e.action_space
+            return sp.low.copy(), sp.high.copy()
+        if hasattr(e, "env"):
+            e = e.env
+        elif hasattr(e, "_wrapped_env"):
+            e = e._wrapped_env
+        else:
+            break
+    raise RuntimeError("Cannot find action_space")
+
+
+# =====================================================================
+# Data discovery
+# =====================================================================
+
+def discover_demos_from_task_root(task_root):
+    """
+    Given a task root like:
+        /home/vsp1323/LIBERO/KITCHEN_SCENE3_..._demo/
+    Find all humanized NPZ files in:
+        <task_root>/humanized/demo_XX/humanized.npz
+    Returns list of dicts with npz_path, demo_idx, task_name.
+    """
+    humanized_dir = os.path.join(task_root, "humanized")
+    if not os.path.isdir(humanized_dir):
+        return []
+
+    demos = []
+    for demo_folder in sorted(os.listdir(humanized_dir)):
+        npz_path = os.path.join(humanized_dir, demo_folder, "humanized.npz")
+        if os.path.isfile(npz_path):
+            data = np.load(npz_path, allow_pickle=True)
+            demo_idx = int(data["demo_idx"])
+            task_name = str(data["task_name"])
+            demos.append({
+                "npz_path": npz_path,
+                "demo_idx": demo_idx,
+                "task_name": task_name,
+            })
+    return demos
+
+
+def discover_all_task_roots(task_roots_dir):
+    """
+    Scan a directory for folders that contain humanized/ subdirectories.
+    Returns dict: task_name -> task_root_path.
+    """
+    task_roots = {}
+    for entry in sorted(os.listdir(task_roots_dir)):
+        full_path = os.path.join(task_roots_dir, entry)
+        if os.path.isdir(full_path) and os.path.isdir(os.path.join(full_path, "humanized")):
+            task_name = entry
+            if task_name.endswith("_demo"):
+                task_name = task_name[:-len("_demo")]
+            task_roots[task_name] = full_path
+    return task_roots
+
+
+# =====================================================================
+# Main conversion
+# =====================================================================
+
+def process_task(task_name, task_root, libero_task_suite, libero_raw_data_dir, output_dir, filter_noops):
+    """Process all humanized demos for one LIBERO task and write to HDF5."""
+
+    demos = discover_demos_from_task_root(task_root)
+    if not demos:
+        print(f"  No humanized demos found in {task_root}/humanized/. Skipping.")
+        return {"success": 0, "failed": 0, "noops_filtered": 0}
+
+    print(f"  Found {len(demos)} humanized demos for task: {task_name}")
+
+    # Get LIBERO task object
+    benchmark_dict = benchmark.get_benchmark_dict()
+    task_suite = benchmark_dict[libero_task_suite]()
+    task_names = task_suite.get_task_names()
+
+    task_idx = None
+    for i, name in enumerate(task_names):
+        if name == task_name:
+            task_idx = i
+            break
+    if task_idx is None:
+        print(f"  WARNING: task '{task_name}' not found in {libero_task_suite}. Skipping.")
+        return {"success": 0, "failed": 0, "noops_filtered": 0}
+
+    task = task_suite.get_task(task_idx)
+
+    # Load original HDF5 (for initial states and gripper actions)
+    orig_hdf5_path = os.path.join(libero_raw_data_dir, f"{task_name}_demo.hdf5")
+    if not os.path.exists(orig_hdf5_path):
+        print(f"  WARNING: Original HDF5 not found at {orig_hdf5_path}. Skipping.")
+        return {"success": 0, "failed": 0, "noops_filtered": 0}
+
+    orig_file = h5py.File(orig_hdf5_path, "r")
+    orig_data = orig_file["data"]
+
+    # Setup LIBERO environment with JOINT_POSITION controller, 256x256 rendering
+    task_bddl_file = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+
+    env = OffScreenRenderEnv(
+        bddl_file_name=task_bddl_file,
+        robots=["Panda"],
+        controller="JOINT_POSITION",
+        camera_heights=IMAGE_RESOLUTION,
+        camera_widths=IMAGE_RESOLUTION,
+        has_renderer=False,
+        has_offscreen_renderer=True,
+        use_camera_obs=True,
+        horizon=2000,
+        ignore_done=True,
+        hard_reset=True,
+    )
+    env.seed(0)
+
+    base_env = get_base_env(env)
+    sim = base_env.sim
+    arm_qpos_idx = get_panda_arm_qpos_indices(sim)
+    low, high = get_action_bounds(env)
+    action_dim = low.shape[0]
+
+    raw_model, raw_data = unwrap_mj(sim)
+
+    # Create output HDF5
+    os.makedirs(output_dir, exist_ok=True)
+    out_hdf5_path = os.path.join(output_dir, f"{task_name}_demo.hdf5")
+    out_file = h5py.File(out_hdf5_path, "w")
+    out_grp = out_file.create_group("data")
+
+    stats = {"success": 0, "failed": 0, "noops_filtered": 0}
+
+    for demo_info in tqdm.tqdm(demos, desc=f"    Replaying {task_name}", leave=False):
+        npz_path = demo_info["npz_path"]
+        demo_idx = demo_info["demo_idx"]
+        demo_key = f"demo_{demo_idx}"
+
+        # Load humanized joint angles
+        npz_data = np.load(npz_path, allow_pickle=True)
+        joint_states_human = npz_data["joint_states_human"].astype(np.float32)
+        T_steps = joint_states_human.shape[0]
+
+        # Load original demo data
+        if demo_key not in orig_data:
+            print(f"    WARNING: {demo_key} not in original HDF5. Skipping.")
+            stats["failed"] += 1
+            continue
+
+        orig_demo = orig_data[demo_key]
+        orig_states = orig_demo["states"][()]
+        orig_actions = orig_demo["actions"][()]  # (T, 7): 6D EEF delta + 1D gripper
+
+        if orig_actions.shape[0] != T_steps:
+            print(f"    WARNING: Length mismatch {demo_key}: NPZ={T_steps}, HDF5={orig_actions.shape[0]}. Skipping.")
+            stats["failed"] += 1
+            continue
+
+        # Gripper commands from original demo (last dim of 7D action)
+        gripper_cmds = orig_actions[:, 6]  # -1 = open, +1 = close
+
+        # Compute dq limits for this trajectory's controller
+        dq_lim = dq_limits_from_joint_states(joint_states_human, margin=50.0)
+
+        # Reset environment, set initial scene state
+        env.reset()
+        if orig_states is not None:
+            env.set_init_state(orig_states[0])
+
+        # Patch controller output limits (same as A_libero_joint_replay.py)
+        robot = base_env.robots[0]
+        ctrl = robot.controller
+        ctrl.output_max = dq_lim.copy()
+        ctrl.output_min = -dq_lim.copy()
+        ctrl.output_max[3] *= 2.0  # j4 needs more range
+        ctrl.output_min[3] *= 2.0
+
+        # ---- Replay trajectory & collect observations ----
+        collected_actions = []
+        collected_ee_states = []
+        collected_gripper_states = []
+        collected_joint_states = []
+        collected_robot_states = []
+        collected_agentview = []
+        collected_eye_in_hand = []
+        collected_sim_states = []
+
+        for t in range(T_steps):
+            q_target = joint_states_human[t]
+            g_cmd = gripper_cmds[t]
+
+            action = joints_target_to_action(
+                sim=sim,
+                base_env=base_env,
+                raw_data=raw_data,
+                arm_qpos_idx=arm_qpos_idx,
+                q_target_7=q_target,
+                g_cmd=g_cmd,
+                action_dim=action_dim,
+            )
+            obs, reward, done, info = env.step(action)
+
+            # Record observations from environment
+            eef_pos = obs["robot0_eef_pos"].copy()
+            eef_quat = obs["robot0_eef_quat"].copy()
+            ee_state = np.hstack((eef_pos, T.quat2axisangle(eef_quat))).astype(np.float32)
+
+            collected_ee_states.append(ee_state)
+            collected_joint_states.append(obs["robot0_joint_pos"].copy().astype(np.float32))
+
+            grip_qpos = obs.get("robot0_gripper_qpos", np.zeros(2, dtype=np.float32))
+            collected_gripper_states.append(grip_qpos.copy().astype(np.float32))
+
+            collected_robot_states.append(
+                np.concatenate([grip_qpos, eef_pos, eef_quat]).astype(np.float32)
+            )
+
+            collected_agentview.append(obs["agentview_image"].copy())
+            collected_eye_in_hand.append(obs["robot0_eye_in_hand_image"].copy())
+            collected_sim_states.append(env.sim.get_state().flatten())
+
+            # Store the original EEF delta action
+            collected_actions.append(orig_actions[t].astype(np.float32))
+
+        # ---- Filter no-op actions ----
+        if filter_noops:
+            filtered_idx = []
+            for t in range(len(collected_actions)):
+                prev = collected_actions[filtered_idx[-1]] if filtered_idx else None
+                if not is_noop(collected_actions[t], prev):
+                    filtered_idx.append(t)
+                else:
+                    stats["noops_filtered"] += 1
+
+            if len(filtered_idx) == 0:
+                print(f"    WARNING: All no-ops for {demo_key}. Skipping.")
+                stats["failed"] += 1
+                continue
+        else:
+            filtered_idx = list(range(len(collected_actions)))
+
+        # ---- Write to HDF5 ----
+        n = len(filtered_idx)
+
+        ep_grp = out_grp.create_group(demo_key)
+        obs_grp = ep_grp.create_group("obs")
+
+        sel = lambda arr: np.stack([arr[i] for i in filtered_idx])
+
+        obs_grp.create_dataset("gripper_states", data=sel(collected_gripper_states))
+        obs_grp.create_dataset("joint_states", data=sel(collected_joint_states))
+        obs_grp.create_dataset("ee_states", data=sel(collected_ee_states))
+        obs_grp.create_dataset("ee_pos", data=sel(collected_ee_states)[:, :3])
+        obs_grp.create_dataset("ee_ori", data=sel(collected_ee_states)[:, 3:])
+        obs_grp.create_dataset("agentview_rgb", data=sel(collected_agentview))
+        obs_grp.create_dataset("eye_in_hand_rgb", data=sel(collected_eye_in_hand))
+        ep_grp.create_dataset("actions", data=sel(collected_actions))
+        ep_grp.create_dataset("states", data=sel(collected_sim_states))
+        ep_grp.create_dataset("robot_states", data=sel(collected_robot_states))
+
+        dones = np.zeros(n, dtype=np.uint8)
+        dones[-1] = 1
+        rewards = np.zeros(n, dtype=np.uint8)
+        rewards[-1] = 1
+        ep_grp.create_dataset("rewards", data=rewards)
+        ep_grp.create_dataset("dones", data=dones)
+
+        stats["success"] += 1
+        print(f"    {demo_key}: {n} steps written")
+
+    orig_file.close()
+    out_file.close()
+    env.close()
+
+    print(f"  Saved: {out_hdf5_path}")
+    print(f"  Stats: {stats}")
+    return stats
+
+
+def main(args):
+    print(f"{'='*60}")
+    print(f"NPZ -> HDF5 Conversion for LIBERO")
+    print(f"{'='*60}")
+    print(f"  Suite:           {args.libero_task_suite}")
+    print(f"  Raw HDF5 dir:    {args.libero_raw_data_dir}")
+    print(f"  Output dir:      {args.output_dir}")
+    print(f"  Filter no-ops:   {args.filter_noops}")
+
+    # Discover task roots
+    task_roots = {}
+    if args.task_root:
+        task_name = os.path.basename(args.task_root.rstrip("/"))
+        if task_name.endswith("_demo"):
+            task_name = task_name[:-len("_demo")]
+        task_roots[task_name] = args.task_root
+    elif args.task_roots_dir:
+        task_roots = discover_all_task_roots(args.task_roots_dir)
+    else:
+        print("ERROR: Must specify --task_root or --task_roots_dir")
+        return
+
+    print(f"  Found {len(task_roots)} task(s): {list(task_roots.keys())}")
+
+    total_stats = {"success": 0, "failed": 0, "noops_filtered": 0}
+
+    for task_name, task_root in task_roots.items():
+        print(f"\n--- Processing: {task_name} ---")
+        stats = process_task(
+            task_name=task_name,
+            task_root=task_root,
+            libero_task_suite=args.libero_task_suite,
+            libero_raw_data_dir=args.libero_raw_data_dir,
+            output_dir=args.output_dir,
+            filter_noops=args.filter_noops,
+        )
+        for k in total_stats:
+            total_stats[k] += stats[k]
+
+    print(f"\n{'='*60}")
+    print(f"Conversion complete!")
+    print(f"  Episodes saved:      {total_stats['success']}")
+    print(f"  Episodes failed:     {total_stats['failed']}")
+    print(f"  No-ops filtered:     {total_stats['noops_filtered']}")
+    print(f"  Output directory:    {args.output_dir}")
+    print(f"{'='*60}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Convert humanized NPZ joint-angle trajectories to LIBERO-compatible HDF5."
+    )
+    parser.add_argument(
+        "--libero_task_suite", type=str, required=True,
+        choices=["libero_spatial", "libero_object", "libero_goal", "libero_10", "libero_90"],
+    )
+
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument(
+        "--task_root", type=str, default=None,
+        help="Single task root folder, e.g. /home/vsp1323/LIBERO/KITCHEN_SCENE3_..._demo",
+    )
+    source.add_argument(
+        "--task_roots_dir", type=str, default=None,
+        help="Directory of task root folders, e.g. /home/vsp1323/LIBERO",
+    )
+
+    parser.add_argument(
+        "--libero_raw_data_dir", type=str, required=True,
+        help="Path to original LIBERO HDF5 dir, e.g. ./LIBERO/libero/datasets/libero_10",
+    )
+    parser.add_argument(
+        "--output_dir", type=str, required=True,
+        help="Output directory for HDF5 files.",
+    )
+    parser.add_argument(
+        "--filter_noops", action="store_true", default=False,
+        help="Filter out no-op actions.",
+    )
+
+    args = parser.parse_args()
+    main(args)

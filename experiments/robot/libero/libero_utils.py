@@ -15,19 +15,27 @@ from experiments.robot.robot_utils import (
 )
 
 
-def get_libero_env(task, model_family, resolution=256):
-    """Initializes and returns the LIBERO environment, along with the task description."""
+def get_libero_env(task, model_family, resolution=256, use_joint_pos=False):
+    """Initializes and returns the LIBERO environment, along with the task description.
+
+    Args:
+        use_joint_pos: If True, use JOINT_POSITION controller instead of default OSC_POSE.
+    """
     task_description = task.language
     task_bddl_file = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
     env_args = {"bddl_file_name": task_bddl_file, "camera_heights": resolution, "camera_widths": resolution}
+    if use_joint_pos:
+        env_args["controller"] = "JOINT_POSITION"
     env = OffScreenRenderEnv(**env_args)
     env.seed(0)  # IMPORTANT: seed seems to affect object positions even when using fixed initial state
     return env, task_description
 
 
-def get_libero_dummy_action(model_family: str):
+def get_libero_dummy_action(model_family: str, use_joint_pos: bool = False):
     """Get dummy/no-op action, used to roll out the simulation while the robot does nothing."""
-    return [0, 0, 0, 0, 0, 0, -1]
+    if use_joint_pos:
+        return [0, 0, 0, 0, 0, 0, 0, -1]  # 8D: 7 zero-delta joints + open gripper
+    return [0, 0, 0, 0, 0, 0, -1]           # 7D: OSC_POSE default
 
 
 def get_libero_image(obs):

@@ -49,6 +49,10 @@ from experiments.robot.robot_utils import (
 )
 from prismatic.vla.constants import NUM_ACTIONS_CHUNK
 
+# Default controller output_max for JOINT_POSITION controller (Panda, per-joint per-step at 20Hz)
+# Used when we cannot read ctrl.output_max from the env
+DEFAULT_JOINT_DQ_MAX = 0.05
+
 
 # Define task suite constants
 class TaskSuite(str, Enum):
@@ -97,7 +101,9 @@ class GenerateConfig:
     use_proprio: bool = True                         # Whether to include proprio state in input
 
     center_crop: bool = True                         # Center crop? (if trained w/ random crop image aug)
-    num_open_loop_steps: int = 8                     # Number of actions to execute open-loop before requerying policy
+    num_open_loop_steps: int = 25                     # Number of actions to execute open-loop before requerying policy
+
+    use_joint_pos: bool = False                       # If True, use JOINT_POSITION controller with 8D absolute actions
 
     lora_rank: int = 32                              # Rank of LoRA weight matrix (MAKE SURE THIS MATCHES TRAINING!)
 
@@ -178,8 +184,11 @@ def initialize_model(cfg: GenerateConfig):
 
 def check_unnorm_key(cfg: GenerateConfig, model) -> None:
     """Check that the model contains the action un-normalization key."""
-    # Initialize unnorm_key
-    unnorm_key = cfg.task_suite_name
+    # Use explicit unnorm_key if provided, otherwise derive from task_suite_name
+    if cfg.unnorm_key and cfg.unnorm_key in model.norm_stats:
+        return  # already set and valid
+
+    unnorm_key = cfg.unnorm_key if cfg.unnorm_key else cfg.task_suite_name
 
     # In some cases, the key must be manually modified (e.g. after training on a modified version of the dataset
     # with the suffix "_no_noops" in the dataset name)
@@ -240,7 +249,7 @@ def load_initial_states(cfg: GenerateConfig, task_suite, task_id: int, log_file=
         return initial_states, None
 
 
-def prepare_observation(obs, resize_size):
+def prepare_observation(obs, resize_size, use_joint_pos=False):
     """Prepare observation for policy input."""
     # Get preprocessed images
     img = get_libero_image(obs)
@@ -251,28 +260,60 @@ def prepare_observation(obs, resize_size):
     wrist_img_resized = resize_image_for_policy(wrist_img, resize_size)
 
     # Prepare observations dict
+    if use_joint_pos:
+        # Joint position proprio: [joint_pos(7), gripper_width(1)] = 8D
+        gripper_width = np.mean(obs["robot0_gripper_qpos"])  # scalar
+        state = np.concatenate((obs["robot0_joint_pos"], [gripper_width]))
+    else:
+        # EEF proprio: [pos(3), axisangle(3), gripper_qpos(2)] = 8D
+        state = np.concatenate(
+            (obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]), obs["robot0_gripper_qpos"])
+        )
+
     observation = {
         "full_image": img_resized,
         "wrist_image": wrist_img_resized,
-        "state": np.concatenate(
-            (obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]), obs["robot0_gripper_qpos"])
-        ),
+        "state": state,
     }
 
     return observation, img  # Return both processed observation and original image for replay
 
 
-def process_action(action, model_family):
-    """Process action before sending to environment."""
-    # Normalize gripper action [0,1] -> [-1,+1] because the environment expects the latter
-    action = normalize_gripper_action(action, binarize=True)
+def process_action(action, model_family, use_joint_pos=False, obs=None, dq_max=None):
+    """Process action before sending to environment.
 
-    # [OpenVLA] The dataloader flips the sign of the gripper action to align with other datasets
-    # (0 = close, 1 = open), so flip it back (-1 = open, +1 = close) before executing the action
-    if model_family == "openvla":
-        action = invert_gripper_action(action)
+    For JOINT_POSITION mode:
+      - Model outputs absolute joint positions (8D: 7 joints + 1 gripper).
+      - Convert joints to normalized delta: clip((q_target - q_cur) / dq_max, -1, 1).
+      - Gripper passes through as raw -1/+1 (no inversion needed).
 
-    return action
+    For OSC_POSE mode (original):
+      - Normalize gripper [0,1] -> [-1,+1] and invert sign.
+    """
+    if use_joint_pos:
+        assert obs is not None, "obs required for JOINT_POSITION absolute→delta conversion"
+        assert dq_max is not None, "dq_max required for JOINT_POSITION conversion"
+
+        q_cur = obs["robot0_joint_pos"]  # (7,)
+        q_target = action[:7]            # absolute joint targets from model
+        dq_des = q_target - q_cur        # desired delta
+        u = np.clip(dq_des / dq_max, -1.0, 1.0).astype(np.float32)  # normalized delta
+
+        processed = np.zeros(8, dtype=np.float32)
+        processed[:7] = u
+        processed[7] = np.sign(action[7])  # binarize gripper: -1=open, +1=close
+        return processed
+    else:
+        # Original OSC_POSE processing
+        # Normalize gripper action [0,1] -> [-1,+1] because the environment expects the latter
+        action = normalize_gripper_action(action, binarize=True)
+
+        # [OpenVLA] The dataloader flips the sign of the gripper action to align with other datasets
+        # (0 = close, 1 = open), so flip it back (-1 = open, +1 = close) before executing the action
+        if model_family == "openvla":
+            action = invert_gripper_action(action)
+
+        return action
 
 
 def run_episode(
@@ -298,6 +339,18 @@ def run_episode(
     else:
         obs = env.get_observation()
 
+    # --- JOINT_POSITION: get controller dq_max ---
+    dq_max = None
+    if cfg.use_joint_pos:
+        try:
+            ctrl = env.env.robots[0].controller
+            dq_max = np.array(ctrl.output_max, dtype=np.float32).reshape(-1)[:7]
+            dq_max = np.maximum(dq_max, 1e-6)
+            logger.info(f"[JOINT_POS] Using controller output_max: {dq_max}")
+        except Exception as e:
+            dq_max = np.ones(7, dtype=np.float32) * DEFAULT_JOINT_DQ_MAX
+            logger.warning(f"[JOINT_POS] Could not read controller output_max ({e}), using default={DEFAULT_JOINT_DQ_MAX}")
+
     # Initialize action queue
     if cfg.num_open_loop_steps != NUM_ACTIONS_CHUNK:
         print(f"WARNING: cfg.num_open_loop_steps ({cfg.num_open_loop_steps}) does not match the NUM_ACTIONS_CHUNK "
@@ -316,12 +369,12 @@ def run_episode(
         while t < max_steps + cfg.num_steps_wait:
             # Do nothing for the first few timesteps to let objects stabilize
             if t < cfg.num_steps_wait:
-                obs, reward, done, info = env.step(get_libero_dummy_action(cfg.model_family))
+                obs, reward, done, info = env.step(get_libero_dummy_action(cfg.model_family, cfg.use_joint_pos))
                 t += 1
                 continue
 
             # Prepare observation
-            observation, img = prepare_observation(obs, resize_size)
+            observation, img = f(obs, resize_size, cfg.use_joint_pos)
             replay_images.append(img)
 
             # If action queue is empty, requery model
@@ -344,7 +397,7 @@ def run_episode(
             action = action_queue.popleft()
 
             # Process action
-            action = process_action(action, cfg.model_family)
+            action = process_action(action, cfg.model_family, cfg.use_joint_pos, obs=obs, dq_max=dq_max)
 
             # Execute action in environment
             obs, reward, done, info = env.step(action.tolist())
@@ -381,7 +434,7 @@ def run_task(
     initial_states, all_initial_states = load_initial_states(cfg, task_suite, task_id, log_file)
 
     # Initialize environment and get task description
-    env, task_description = get_libero_env(task, cfg.model_family, resolution=cfg.env_img_res)
+    env, task_description = get_libero_env(task, cfg.model_family, resolution=cfg.env_img_res, use_joint_pos=cfg.use_joint_pos)
 
     # Start episodes
     task_episodes, task_successes = 0, 0

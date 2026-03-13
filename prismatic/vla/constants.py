@@ -24,9 +24,9 @@ class NormalizationType(str, Enum):
 
 # Define constants for each robot platform
 LIBERO_CONSTANTS = {
-    "NUM_ACTIONS_CHUNK": 8,
-    "ACTION_DIM": 7,
-    "PROPRIO_DIM": 8,
+    "NUM_ACTIONS_CHUNK": 8, #8 before
+    "ACTION_DIM": 8,         # Absolute joint positions (7) + gripper (1)
+    "PROPRIO_DIM": 8,       # Joint positions (7) + gripper width (1)
     "ACTION_PROPRIO_NORMALIZATION_TYPE": NormalizationType.BOUNDS_Q99,
 }
 

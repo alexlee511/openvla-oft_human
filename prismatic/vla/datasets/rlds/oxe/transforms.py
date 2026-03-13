@@ -841,6 +841,20 @@ def libero_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
     return trajectory
 
 
+def libero_joint_pos_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+    """Transform for humanized LIBERO datasets with absolute joint position actions (8D).
+
+    Actions: [joint_pos(7), gripper(1)] -- absolute joint position targets.
+      Gripper: raw -1 (open) / +1 (close), matching LIBERO controller convention.
+      All 8 dims are absolute and go through BOUNDS_Q99 normalization.
+    State: [joint_pos(7), gripper_width(1)] = 8D proprioceptive state.
+    """
+    # Split state into joint_state and gripper_state for the state_obs_keys
+    trajectory["observation"]["joint_state"] = trajectory["observation"]["state"][:, :7]
+    trajectory["observation"]["gripper_state"] = trajectory["observation"]["state"][:, 7:]  # 1D
+    return trajectory
+
+
 def aloha_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
     # Don't need to do anything because dataset is already in the correct format
     return trajectory
@@ -925,6 +939,17 @@ OXE_STANDARDIZATION_TRANSFORMS = {
     "libero_goal_no_noops": libero_dataset_transform,
     "libero_10_no_noops": libero_dataset_transform,
     "libero_4_task_suites_no_noops": libero_dataset_transform,
+    ### LIBERO humanized datasets (absolute joint position actions)
+    "libero_10_humanized_no_noops": libero_joint_pos_dataset_transform,
+    "libero_10_humanized": libero_joint_pos_dataset_transform,
+    "libero_spatial_humanized_no_noops": libero_joint_pos_dataset_transform,
+    "libero_spatial_humanized": libero_joint_pos_dataset_transform,
+    "libero_object_humanized_no_noops": libero_joint_pos_dataset_transform,
+    "libero_object_humanized": libero_joint_pos_dataset_transform,
+    "libero_goal_humanized_no_noops": libero_joint_pos_dataset_transform,
+    "libero_goal_humanized": libero_joint_pos_dataset_transform,
+    "libero_4_task_suites_humanized_no_noops": libero_joint_pos_dataset_transform,
+    "libero_4_task_suites_humanized": libero_joint_pos_dataset_transform,
     ### ALOHA fine-tuning datasets
     "aloha1_fold_shorts_20_demos": aloha_dataset_transform,
     "aloha1_fold_shirt_30_demos": aloha_dataset_transform,

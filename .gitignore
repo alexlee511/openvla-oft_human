@@ -148,6 +148,13 @@ dmypy.json
 cache/
 data/
 
+# Large dataset files (too big for GitHub)
+LIBERO/libero/datasets/
+LIBERO/
+modified_libero_rlds/
+*.hdf5
+*.tfrecord
+
 # Rollout videos and wandb logs
 rollouts/
 wandb/
