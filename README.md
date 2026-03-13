@@ -1,91 +1,83 @@
-# Fine-Tuning Vision-Language-Action Models: Optimizing Speed and Success
+# OpenVLA-OFT with Humanized Demonstrations
 
-**Project website: https://openvla-oft.github.io/**
+This project extends [OpenVLA-OFT](https://github.com/moojink/openvla-oft) to support **humanized robot demonstrations** — trajectories that exhibit more human-like motion characteristics while maintaining task success. The model is fine-tuned on LIBERO simulation benchmarks using absolute joint position control instead of end-effector position control.
 
-**Paper: https://arxiv.org/abs/2502.19645**
+## Overview
 
-**Summary video: https://youtu.be/T3Zkkr_NTSA**
+- **Base model**: OpenVLA-OFT (Vision-Language-Action model with optimized fine-tuning)
+- **Key modification**: Fine-tuning with humanized demonstrations using absolute joint position actions (7 DOF + gripper)
+- **Supported task suites**: LIBERO-10, LIBERO-Goal, LIBERO-Spatial, LIBERO-Object (both with and without no-op filtering)
+- **Action space**: 8-dimensional absolute joint positions (7 joint angles + 1 gripper), action chunks of 8 steps
+- **Proprioceptive state**: 8-dimensional (7 joint positions + 1 gripper width)
+
+## Repository Structure
+
+```
+├── prismatic/                  # Core model code (VLA, backbones, training)
+│   └── vla/
+│       ├── constants.py        # Platform-specific constants (LIBERO/ALOHA/Bridge)
+│       └── datasets/rlds/oxe/
+│           ├── configs.py      # Dataset configurations (humanized entries added)
+│           ├── transforms.py   # Data transforms for each dataset
+│           └── materialize.py  # Dataset materialization utilities
+├── vla-scripts/                # Fine-tuning and deployment scripts
+├── experiments/robot/libero/   # LIBERO evaluation and data processing
+│   └── A_npz_to_hdf5.py       # Convert humanized NPZ trajectories to HDF5
+├── rlds_dataset_builder/       # RLDS dataset builders for TensorFlow Datasets
+│   ├── LIBERO_10_humanized/    # Builder for humanized LIBERO-10
+│   ├── LIBERO_Goal_humanized/  # Builder for humanized LIBERO-Goal
+│   ├── LIBERO_Object_humanized/# Builder for humanized LIBERO-Object
+│   └── LIBERO_Spatial_humanized/# Builder for humanized LIBERO-Spatial
+├── LIBERO/                     # LIBERO benchmark (code only, datasets excluded)
+└── modified_libero_rlds/       # Modified RLDS metadata (not tracked, local only)
+```
 
 ## System Requirements
 
-Inference:
-* 1 GPU with ~16 GB VRAM for LIBERO sim benchmark tasks
-* 1 GPU with ~18 GB VRAM for ALOHA robot tasks
+**Inference:**
+- 1 GPU with ~16 GB VRAM for LIBERO simulation benchmark tasks
 
-Training:
-* Between 1-8 GPUs with 27-80 GB, depending on the desired training setup (with default bfloat16 data type). See [this FAQ on our project website](https://openvla-oft.github.io/#train-compute) for details.
+**Training:**
+- 1–8 GPUs with 27–80 GB VRAM, depending on the desired training setup (bfloat16). See the [original project FAQ](https://openvla-oft.github.io/#train-compute) for details.
 
 ## Quick Start
 
-First, set up a conda environment (see instructions in [SETUP.md](SETUP.md)).
+1. Set up a conda environment (see [SETUP.md](SETUP.md)).
 
-Then, run the Python script below to download a pretrained OpenVLA-OFT checkpoint and run inference to generate an action chunk:
-
-```python
-import pickle
-from experiments.robot.libero.run_libero_eval import GenerateConfig
-from experiments.robot.openvla_utils import get_action_head, get_processor, get_proprio_projector, get_vla, get_vla_action
-from prismatic.vla.constants import NUM_ACTIONS_CHUNK, PROPRIO_DIM
-
-# Instantiate config (see class GenerateConfig in experiments/robot/libero/run_libero_eval.py for definitions)
-cfg = GenerateConfig(
-    pretrained_checkpoint = "moojink/openvla-7b-oft-finetuned-libero-spatial",
-    use_l1_regression = True,
-    use_diffusion = False,
-    use_film = False,
-    num_images_in_input = 2,
-    use_proprio = True,
-    load_in_8bit = False,
-    load_in_4bit = False,
-    center_crop = True,
-    num_open_loop_steps = NUM_ACTIONS_CHUNK,
-    unnorm_key = "libero_spatial_no_noops",
-)
-
-# Load OpenVLA-OFT policy and inputs processor
-vla = get_vla(cfg)
-processor = get_processor(cfg)
-
-# Load MLP action head to generate continuous actions (via L1 regression)
-action_head = get_action_head(cfg, llm_dim=vla.llm_dim)
-
-# Load proprio projector to map proprio to language embedding space
-proprio_projector = get_proprio_projector(cfg, llm_dim=vla.llm_dim, proprio_dim=PROPRIO_DIM)
-
-# Load sample observation:
-#   observation (dict): {
-#     "full_image": primary third-person image,
-#     "wrist_image": wrist-mounted camera image,
-#     "state": robot proprioceptive state,
-#     "task_description": task description,
-#   }
-with open("experiments/robot/libero/sample_libero_spatial_observation.pkl", "rb") as file:
-    observation = pickle.load(file)
-
-# Generate robot action chunk (sequence of future actions)
-actions = get_vla_action(cfg, vla, processor, observation, observation["task_description"], action_head, proprio_projector)
-print("Generated action chunk:")
-for act in actions:
-    print(act)
+2. Fine-tune on a humanized dataset:
+```bash
+# See vla-scripts/finetune.py and LIBERO.md for full training instructions
 ```
+
+3. Evaluate on LIBERO:
+```bash
+# See experiments/robot/libero/run_libero_eval.py
+```
+
+## Data Pipeline
+
+1. **Record humanized joint angle trajectories** (NPZ format)
+2. **Replay in LIBERO simulation** to render images and compute states → cleaned HDF5
+3. **Convert HDF5 to RLDS** using the builders in `rlds_dataset_builder/`
+4. **Fine-tune OpenVLA-OFT** on the resulting RLDS datasets
 
 ## Installation
 
-See [SETUP.md](SETUP.md) for instructions on setting up the conda environment.
+See [SETUP.md](SETUP.md) for conda environment setup instructions.
 
 ## Training and Evaluation
 
-See [LIBERO.md](LIBERO.md) for fine-tuning/evaluating on LIBERO simulation benchmark task suites.
+See [LIBERO.md](LIBERO.md) for fine-tuning and evaluation on LIBERO simulation benchmarks.
 
-See [ALOHA.md](ALOHA.md) for fine-tuning/evaluating on real-world ALOHA robot tasks.
+See [ALOHA.md](ALOHA.md) for fine-tuning and evaluation on real-world ALOHA robot tasks.
 
-## Support
+## Acknowledgments
 
-If you run into any issues, please open a new GitHub issue. If you do not receive a response within 2 business days, please email Moo Jin Kim (moojink@cs.stanford.edu) to bring the issue to his attention.
+This project is built on top of [OpenVLA-OFT](https://github.com/moojink/openvla-oft) by Kim et al.
 
 ## Citation
 
-If you use our code in your work, please cite [our paper](https://arxiv.org/abs/2502.19645):
+If you use this code in your work, please cite the original OpenVLA-OFT paper:
 
 ```bibtex
 @article{kim2025fine,

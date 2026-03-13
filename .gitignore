@@ -150,7 +150,8 @@ data/
 
 # Large dataset files (too big for GitHub)
 LIBERO/libero/datasets/
-LIBERO/
+LIBERO/libero/libero/assets/
+LIBERO/.git/
 modified_libero_rlds/
 *.hdf5
 *.tfrecord
