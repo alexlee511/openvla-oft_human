@@ -1,0 +1,537 @@
+Rollout directory: ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12
+Task suite: libero_10
+Using default initial states
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=1--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=1--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=1--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=1--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.json
+Success: True
+# episodes completed so far: 1
+# successes: 1 (100.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=2--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=2--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=2--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=2--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.json
+Success: False
+# episodes completed so far: 2
+# successes: 1 (50.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=3--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=3--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=3--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=3--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.json
+Success: True
+# episodes completed so far: 3
+# successes: 2 (66.7%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=4--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=4--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=4--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=4--success=True--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.json
+Success: True
+# episodes completed so far: 4
+# successes: 3 (75.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 5...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=5--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=5--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=5--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=5--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.json
+Success: False
+# episodes completed so far: 5
+# successes: 3 (60.0%)
+Current task success rate: 0.6
+Current total success rate: 0.6
+Using default initial states
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=6--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=6--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=6--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=6--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.json
+Success: True
+# episodes completed so far: 6
+# successes: 4 (66.7%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=7--success=False--task=put_both_the_cream_cheese_box_and_the_butter_in_th.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=7--success=False--task=put_both_the_cream_cheese_box_and_the_butter_in_th.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=7--success=False--task=put_both_the_cream_cheese_box_and_the_butter_in_th.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=7--success=False--task=put_both_the_cream_cheese_box_and_the_butter_in_th.json
+Success: False
+# episodes completed so far: 7
+# successes: 4 (57.1%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=8--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=8--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=8--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=8--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.json
+Success: True
+# episodes completed so far: 8
+# successes: 5 (62.5%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=9--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=9--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=9--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=9--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.json
+Success: True
+# episodes completed so far: 9
+# successes: 6 (66.7%)
+
+Task: put both the cream cheese box and the butter in the basket
+Starting episode 5...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=10--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=10--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=10--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=10--success=True--task=put_both_the_cream_cheese_box_and_the_butter_in_th.json
+Success: True
+# episodes completed so far: 10
+# successes: 7 (70.0%)
+Current task success rate: 0.8
+Current total success rate: 0.7
+Using default initial states
+
+Task: turn on the stove and put the moka pot on it
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=11--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=11--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=11--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=11--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.json
+Success: True
+# episodes completed so far: 11
+# successes: 8 (72.7%)
+
+Task: turn on the stove and put the moka pot on it
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=12--success=False--task=turn_on_the_stove_and_put_the_moka_pot_on_it.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=12--success=False--task=turn_on_the_stove_and_put_the_moka_pot_on_it.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=12--success=False--task=turn_on_the_stove_and_put_the_moka_pot_on_it.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=12--success=False--task=turn_on_the_stove_and_put_the_moka_pot_on_it.json
+Success: False
+# episodes completed so far: 12
+# successes: 8 (66.7%)
+
+Task: turn on the stove and put the moka pot on it
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=13--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=13--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=13--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=13--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.json
+Success: True
+# episodes completed so far: 13
+# successes: 9 (69.2%)
+
+Task: turn on the stove and put the moka pot on it
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=14--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=14--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=14--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=14--success=True--task=turn_on_the_stove_and_put_the_moka_pot_on_it.json
+Success: True
+# episodes completed so far: 14
+# successes: 10 (71.4%)
+
+Task: turn on the stove and put the moka pot on it
+Starting episode 5...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=15--success=False--task=turn_on_the_stove_and_put_the_moka_pot_on_it.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=15--success=False--task=turn_on_the_stove_and_put_the_moka_pot_on_it.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=15--success=False--task=turn_on_the_stove_and_put_the_moka_pot_on_it.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=15--success=False--task=turn_on_the_stove_and_put_the_moka_pot_on_it.json
+Success: False
+# episodes completed so far: 15
+# successes: 10 (66.7%)
+Current task success rate: 0.6
+Current total success rate: 0.6666666666666666
+Using default initial states
+
+Task: put the black bowl in the bottom drawer of the cabinet and close it
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=16--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=16--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=16--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=16--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.json
+Success: True
+# episodes completed so far: 16
+# successes: 11 (68.8%)
+
+Task: put the black bowl in the bottom drawer of the cabinet and close it
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=17--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=17--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=17--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=17--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.json
+Success: True
+# episodes completed so far: 17
+# successes: 12 (70.6%)
+
+Task: put the black bowl in the bottom drawer of the cabinet and close it
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=18--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=18--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=18--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=18--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.json
+Success: True
+# episodes completed so far: 18
+# successes: 13 (72.2%)
+
+Task: put the black bowl in the bottom drawer of the cabinet and close it
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=19--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=19--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=19--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=19--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.json
+Success: True
+# episodes completed so far: 19
+# successes: 14 (73.7%)
+
+Task: put the black bowl in the bottom drawer of the cabinet and close it
+Starting episode 5...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=20--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=20--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=20--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=20--success=True--task=put_the_black_bowl_in_the_bottom_drawer_of_the_cab.json
+Success: True
+# episodes completed so far: 20
+# successes: 15 (75.0%)
+Current task success rate: 1.0
+Current total success rate: 0.75
+Using default initial states
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=21--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=21--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=21--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=21--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.json
+Success: True
+# episodes completed so far: 21
+# successes: 16 (76.2%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=22--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=22--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=22--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=22--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.json
+Success: True
+# episodes completed so far: 22
+# successes: 17 (77.3%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=23--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=23--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=23--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=23--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.json
+Success: True
+# episodes completed so far: 23
+# successes: 18 (78.3%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=24--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=24--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=24--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=24--success=True--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.json
+Success: True
+# episodes completed so far: 24
+# successes: 19 (79.2%)
+
+Task: put the white mug on the left plate and put the yellow and white mug on the right plate
+Starting episode 5...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=25--success=False--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=25--success=False--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=25--success=False--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=25--success=False--task=put_the_white_mug_on_the_left_plate_and_put_the_ye.json
+Success: False
+# episodes completed so far: 25
+# successes: 19 (76.0%)
+Current task success rate: 0.8
+Current total success rate: 0.76
+Using default initial states
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=26--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=26--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=26--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=26--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.json
+Success: True
+# episodes completed so far: 26
+# successes: 20 (76.9%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=27--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=27--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=27--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=27--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.json
+Success: True
+# episodes completed so far: 27
+# successes: 21 (77.8%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=28--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=28--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=28--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=28--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.json
+Success: True
+# episodes completed so far: 28
+# successes: 22 (78.6%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=29--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=29--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=29--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=29--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.json
+Success: True
+# episodes completed so far: 29
+# successes: 23 (79.3%)
+
+Task: pick up the book and place it in the back compartment of the caddy
+Starting episode 5...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=30--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=30--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=30--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=30--success=True--task=pick_up_the_book_and_place_it_in_the_back_compartm.json
+Success: True
+# episodes completed so far: 30
+# successes: 24 (80.0%)
+Current task success rate: 1.0
+Current total success rate: 0.8
+Using default initial states
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=31--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=31--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=31--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=31--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.json
+Success: False
+# episodes completed so far: 31
+# successes: 24 (77.4%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=32--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=32--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=32--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=32--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.json
+Success: False
+# episodes completed so far: 32
+# successes: 24 (75.0%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=33--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=33--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=33--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=33--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.json
+Success: False
+# episodes completed so far: 33
+# successes: 24 (72.7%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=34--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=34--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=34--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=34--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.json
+Success: False
+# episodes completed so far: 34
+# successes: 24 (70.6%)
+
+Task: put the white mug on the plate and put the chocolate pudding to the right of the plate
+Starting episode 5...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=35--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=35--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=35--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=35--success=False--task=put_the_white_mug_on_the_plate_and_put_the_chocola.json
+Success: False
+# episodes completed so far: 35
+# successes: 24 (68.6%)
+Current task success rate: 0.0
+Current total success rate: 0.6857142857142857
+Using default initial states
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=36--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=36--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=36--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=36--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.json
+Success: True
+# episodes completed so far: 36
+# successes: 25 (69.4%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=37--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=37--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=37--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=37--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.json
+Success: True
+# episodes completed so far: 37
+# successes: 26 (70.3%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=38--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=38--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=38--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=38--success=True--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.json
+Success: True
+# episodes completed so far: 38
+# successes: 27 (71.1%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=39--success=False--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=39--success=False--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=39--success=False--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=39--success=False--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.json
+Success: False
+# episodes completed so far: 39
+# successes: 27 (69.2%)
+
+Task: put both the alphabet soup and the cream cheese box in the basket
+Starting episode 5...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=40--success=False--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=40--success=False--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=40--success=False--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=40--success=False--task=put_both_the_alphabet_soup_and_the_cream_cheese_bo.json
+Success: False
+# episodes completed so far: 40
+# successes: 27 (67.5%)
+Current task success rate: 0.6
+Current total success rate: 0.675
+Using default initial states
+
+Task: put both moka pots on the stove
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=41--success=False--task=put_both_moka_pots_on_the_stove.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=41--success=False--task=put_both_moka_pots_on_the_stove.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=41--success=False--task=put_both_moka_pots_on_the_stove.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=41--success=False--task=put_both_moka_pots_on_the_stove.json
+Success: False
+# episodes completed so far: 41
+# successes: 27 (65.9%)
+
+Task: put both moka pots on the stove
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=42--success=False--task=put_both_moka_pots_on_the_stove.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=42--success=False--task=put_both_moka_pots_on_the_stove.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=42--success=False--task=put_both_moka_pots_on_the_stove.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=42--success=False--task=put_both_moka_pots_on_the_stove.json
+Success: False
+# episodes completed so far: 42
+# successes: 27 (64.3%)
+
+Task: put both moka pots on the stove
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=43--success=False--task=put_both_moka_pots_on_the_stove.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=43--success=False--task=put_both_moka_pots_on_the_stove.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=43--success=False--task=put_both_moka_pots_on_the_stove.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=43--success=False--task=put_both_moka_pots_on_the_stove.json
+Success: False
+# episodes completed so far: 43
+# successes: 27 (62.8%)
+
+Task: put both moka pots on the stove
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=44--success=False--task=put_both_moka_pots_on_the_stove.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=44--success=False--task=put_both_moka_pots_on_the_stove.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=44--success=False--task=put_both_moka_pots_on_the_stove.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=44--success=False--task=put_both_moka_pots_on_the_stove.json
+Success: False
+# episodes completed so far: 44
+# successes: 27 (61.4%)
+
+Task: put both moka pots on the stove
+Starting episode 5...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=45--success=False--task=put_both_moka_pots_on_the_stove.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=45--success=False--task=put_both_moka_pots_on_the_stove.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=45--success=False--task=put_both_moka_pots_on_the_stove.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=45--success=False--task=put_both_moka_pots_on_the_stove.json
+Success: False
+# episodes completed so far: 45
+# successes: 27 (60.0%)
+Current task success rate: 0.0
+Current total success rate: 0.6
+Using default initial states
+
+Task: put the yellow and white mug in the microwave and close it
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=46--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=46--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=46--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=46--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.json
+Success: True
+# episodes completed so far: 46
+# successes: 28 (60.9%)
+
+Task: put the yellow and white mug in the microwave and close it
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=47--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=47--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=47--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=47--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.json
+Success: True
+# episodes completed so far: 47
+# successes: 29 (61.7%)
+
+Task: put the yellow and white mug in the microwave and close it
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=48--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=48--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=48--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=48--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.json
+Success: True
+# episodes completed so far: 48
+# successes: 30 (62.5%)
+
+Task: put the yellow and white mug in the microwave and close it
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=49--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=49--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=49--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=49--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.json
+Success: True
+# episodes completed so far: 49
+# successes: 31 (63.3%)
+
+Task: put the yellow and white mug in the microwave and close it
+Starting episode 5...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/agentview/episode=50--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/video/frontview/episode=50--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/rollout_data/episode=50--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.npz
+Saved episode record at ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/record/episode=50--success=True--task=put_the_yellow_and_white_mug_in_the_microwave_and_.json
+Success: True
+# episodes completed so far: 50
+# successes: 32 (64.0%)
+Current task success rate: 1.0
+Current total success rate: 0.64
+Final results:
+Total episodes: 50
+Total successes: 32
+Overall success rate: 0.6400 (64.0%)
+Saved results summary at: ./rollouts/libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_act/2026_03_17-05_49_12/results.txt

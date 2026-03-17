@@ -155,6 +155,7 @@ LIBERO/.git/
 modified_libero_rlds/
 *.hdf5
 *.tfrecord
+runs/
 
 # Rollout videos and wandb logs
 rollouts/

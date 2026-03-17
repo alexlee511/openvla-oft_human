@@ -23,7 +23,12 @@ def get_libero_env(task, model_family, resolution=256, use_joint_pos=False):
     """
     task_description = task.language
     task_bddl_file = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
-    env_args = {"bddl_file_name": task_bddl_file, "camera_heights": resolution, "camera_widths": resolution}
+    env_args = {
+        "bddl_file_name": task_bddl_file,
+        "camera_heights": resolution,
+        "camera_widths": resolution,
+        "camera_names": ["agentview", "robot0_eye_in_hand", "frontview"],
+    }
     if use_joint_pos:
         env_args["controller"] = "JOINT_POSITION"
     env = OffScreenRenderEnv(**env_args)
@@ -52,20 +57,62 @@ def get_libero_wrist_image(obs):
     return img
 
 
-def save_rollout_video(rollout_images, idx, success, task_description, log_file=None):
-    """Saves an MP4 replay of an episode."""
-    rollout_dir = f"./rollouts/{DATE}"
-    os.makedirs(rollout_dir, exist_ok=True)
+def get_libero_frontview_image(obs):
+    """Extracts front-view camera image from observations and preprocesses it."""
+    img = obs["frontview_image"]
+    img = img[::-1, ::-1]  # rotate 180 degrees to match other views
+    return img
+
+
+def save_rollout_video(rollout_images, idx, success, task_description, log_file=None, rollout_dir=None,
+                       frontview_images=None):
+    """Saves MP4 replays of an episode (agentview + optional frontview)."""
+    if rollout_dir is None:
+        rollout_dir = f"./rollouts/{DATE}"
     processed_task_description = task_description.lower().replace(" ", "_").replace("\n", "_").replace(".", "_")[:50]
-    mp4_path = f"{rollout_dir}/{DATE_TIME}--openvla_oft--episode={idx}--success={success}--task={processed_task_description}.mp4"
+    filename = f"episode={idx}--success={success}--task={processed_task_description}.mp4"
+
+    # Save agentview
+    agentview_dir = os.path.join(rollout_dir, "video", "agentview")
+    os.makedirs(agentview_dir, exist_ok=True)
+    mp4_path = os.path.join(agentview_dir, filename)
     video_writer = imageio.get_writer(mp4_path, fps=30)
     for img in rollout_images:
         video_writer.append_data(img)
     video_writer.close()
-    print(f"Saved rollout MP4 at path {mp4_path}")
+    print(f"Saved agentview MP4 at path {mp4_path}")
     if log_file is not None:
-        log_file.write(f"Saved rollout MP4 at path {mp4_path}\n")
+        log_file.write(f"Saved agentview MP4 at path {mp4_path}\n")
+
+    # Save frontview if provided
+    if frontview_images is not None and len(frontview_images) > 0:
+        frontview_dir = os.path.join(rollout_dir, "video", "frontview")
+        os.makedirs(frontview_dir, exist_ok=True)
+        front_mp4_path = os.path.join(frontview_dir, filename)
+        video_writer = imageio.get_writer(front_mp4_path, fps=30)
+        for img in frontview_images:
+            video_writer.append_data(img)
+        video_writer.close()
+        print(f"Saved frontview MP4 at path {front_mp4_path}")
+        if log_file is not None:
+            log_file.write(f"Saved frontview MP4 at path {front_mp4_path}\n")
+
     return mp4_path
+
+
+def save_rollout_data(rollout_data, idx, success, task_description, log_file=None, rollout_dir=None):
+    """Saves per-timestep joint data from an episode rollout as an NPZ file."""
+    if rollout_dir is None:
+        rollout_dir = f"./rollouts/{DATE}"
+    data_dir = os.path.join(rollout_dir, "rollout_data")
+    os.makedirs(data_dir, exist_ok=True)
+    processed_task_description = task_description.lower().replace(" ", "_").replace("\n", "_").replace(".", "_")[:50]
+    npz_path = f"{data_dir}/episode={idx}--success={success}--task={processed_task_description}.npz"
+    np.savez_compressed(npz_path, **rollout_data)
+    print(f"Saved rollout data at path {npz_path}")
+    if log_file is not None:
+        log_file.write(f"Saved rollout data at path {npz_path}\n")
+    return npz_path
 
 
 def quat2axisangle(quat):

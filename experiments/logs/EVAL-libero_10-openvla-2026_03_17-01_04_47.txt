@@ -1,0 +1,42 @@
+Rollout directory: ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47
+Task suite: libero_10
+Using default initial states
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 1...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/video/agentview/episode=1--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/video/frontview/episode=1--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/rollout_data/episode=1--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.npz
+Success: False
+# episodes completed so far: 1
+# successes: 0 (0.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 2...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/video/agentview/episode=2--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/video/frontview/episode=2--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/rollout_data/episode=2--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.npz
+Success: False
+# episodes completed so far: 2
+# successes: 0 (0.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 3...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/video/agentview/episode=3--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/video/frontview/episode=3--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/rollout_data/episode=3--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.npz
+Success: False
+# episodes completed so far: 3
+# successes: 0 (0.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 4...
+Saved agentview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/video/agentview/episode=4--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved frontview MP4 at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/video/frontview/episode=4--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.mp4
+Saved rollout data at path ./rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--conti/2026_03_17-01_04_47/rollout_data/episode=4--success=False--task=put_both_the_alphabet_soup_and_the_tomato_sauce_in.npz
+Success: False
+# episodes completed so far: 4
+# successes: 0 (0.0%)
+
+Task: put both the alphabet soup and the tomato sauce in the basket
+Starting episode 5...

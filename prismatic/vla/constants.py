@@ -23,10 +23,20 @@ class NormalizationType(str, Enum):
 
 
 # Define constants for each robot platform
-LIBERO_CONSTANTS = {
-    "NUM_ACTIONS_CHUNK": 8, #8 before
-    "ACTION_DIM": 8,         # Absolute joint positions (7) + gripper (1)
-    "PROPRIO_DIM": 8,       # Joint positions (7) + gripper width (1)
+
+# Original LIBERO: 7D EEF delta actions, 8-step action chunks
+LIBERO_ORIGINAL_CONSTANTS = {
+    "NUM_ACTIONS_CHUNK": 25,
+    "ACTION_DIM": 7,            # EEF delta (dx, dy, dz, drx, dry, drz, gripper)
+    "PROPRIO_DIM": 8,           # EEF pos (3) + EEF ori (3) + gripper (2)
+    "ACTION_PROPRIO_NORMALIZATION_TYPE": NormalizationType.BOUNDS_Q99,
+}
+
+# Humanized LIBERO: 8D absolute joint position actions, 8-step action chunks
+LIBERO_HUMANIZED_CONSTANTS = {
+    "NUM_ACTIONS_CHUNK": 8,
+    "ACTION_DIM": 8,            # Absolute joint positions (7) + gripper (1)
+    "PROPRIO_DIM": 8,           # Joint positions (7) + gripper width (1)
     "ACTION_PROPRIO_NORMALIZATION_TYPE": NormalizationType.BOUNDS_Q99,
 }
 
@@ -50,22 +60,30 @@ def detect_robot_platform():
     cmd_args = " ".join(sys.argv).lower()
 
     if "libero" in cmd_args:
-        return "LIBERO"
+        # Distinguish humanized (joint pos) vs original (EEF delta) LIBERO
+        # Only trigger humanized mode when:
+        #   1. "--use_joint_pos true" flag is explicitly set, OR
+        #   2. dataset name contains "_humanized" (e.g. libero_10_humanized)
+        if "--use_joint_pos true" in cmd_args or "_humanized" in cmd_args:
+            return "LIBERO_HUMANIZED"
+        return "LIBERO_ORIGINAL"
     elif "aloha" in cmd_args:
         return "ALOHA"
     elif "bridge" in cmd_args:
         return "BRIDGE"
     else:
-        # Default to LIBERO if unclear
-        return "LIBERO"
+        # Default to original LIBERO if unclear
+        return "LIBERO_ORIGINAL"
 
 
 # Determine which robot platform to use
 ROBOT_PLATFORM = detect_robot_platform()
 
 # Set the appropriate constants based on the detected platform
-if ROBOT_PLATFORM == "LIBERO":
-    constants = LIBERO_CONSTANTS
+if ROBOT_PLATFORM == "LIBERO_HUMANIZED":
+    constants = LIBERO_HUMANIZED_CONSTANTS
+elif ROBOT_PLATFORM == "LIBERO_ORIGINAL":
+    constants = LIBERO_ORIGINAL_CONSTANTS
 elif ROBOT_PLATFORM == "ALOHA":
     constants = ALOHA_CONSTANTS
 elif ROBOT_PLATFORM == "BRIDGE":
