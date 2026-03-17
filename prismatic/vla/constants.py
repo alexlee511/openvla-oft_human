@@ -26,7 +26,7 @@ class NormalizationType(str, Enum):
 
 # Original LIBERO: 7D EEF delta actions, 8-step action chunks
 LIBERO_ORIGINAL_CONSTANTS = {
-    "NUM_ACTIONS_CHUNK": 25,
+    "NUM_ACTIONS_CHUNK": 8,
     "ACTION_DIM": 7,            # EEF delta (dx, dy, dz, drx, dry, drz, gripper)
     "PROPRIO_DIM": 8,           # EEF pos (3) + EEF ori (3) + gripper (2)
     "ACTION_PROPRIO_NORMALIZATION_TYPE": NormalizationType.BOUNDS_Q99,
