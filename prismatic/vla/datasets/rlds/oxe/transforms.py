@@ -939,6 +939,11 @@ OXE_STANDARDIZATION_TRANSFORMS = {
     "libero_goal_no_noops": libero_dataset_transform,
     "libero_10_no_noops": libero_dataset_transform,
     "libero_4_task_suites_no_noops": libero_dataset_transform,
+    ### LIBERO joint datasets (original demos with derived joint position actions)
+    "libero_10_joint_noops": libero_joint_pos_dataset_transform,
+    "libero_object_joint_noops": libero_joint_pos_dataset_transform,
+    "libero_spatial_joint_noops": libero_joint_pos_dataset_transform,
+    "libero_goal_joint_noops": libero_joint_pos_dataset_transform,
     ### LIBERO humanized datasets (absolute joint position actions)
     "libero_10_humanized_no_noops": libero_joint_pos_dataset_transform,
     "libero_10_humanized": libero_joint_pos_dataset_transform,

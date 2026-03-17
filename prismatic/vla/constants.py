@@ -60,11 +60,12 @@ def detect_robot_platform():
     cmd_args = " ".join(sys.argv).lower()
 
     if "libero" in cmd_args:
-        # Distinguish humanized (joint pos) vs original (EEF delta) LIBERO
-        # Only trigger humanized mode when:
+        # Distinguish humanized/joint (joint pos) vs original (EEF delta) LIBERO
+        # Trigger humanized (joint pos) mode when:
         #   1. "--use_joint_pos true" flag is explicitly set, OR
-        #   2. dataset name contains "_humanized" (e.g. libero_10_humanized)
-        if "--use_joint_pos true" in cmd_args or "_humanized" in cmd_args:
+        #   2. dataset name contains "_humanized" (e.g. libero_10_humanized), OR
+        #   3. dataset name contains "_joint" (e.g. libero_10_joint_noops)
+        if "--use_joint_pos true" in cmd_args or "_humanized" in cmd_args or "_joint" in cmd_args:
             return "LIBERO_HUMANIZED"
         return "LIBERO_ORIGINAL"
     elif "aloha" in cmd_args:

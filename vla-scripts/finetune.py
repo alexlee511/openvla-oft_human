@@ -57,6 +57,7 @@ from prismatic.vla.constants import (
     ACTION_PROPRIO_NORMALIZATION_TYPE,
     NUM_ACTIONS_CHUNK,
     PROPRIO_DIM,
+    ROBOT_PLATFORM,
 )
 from prismatic.vla.datasets import RLDSBatchTransform, RLDSDataset
 from prismatic.vla.datasets.rlds.utils.data_utils import save_dataset_statistics
@@ -174,6 +175,11 @@ def get_run_id(cfg) -> str:
             run_id += f"+lora-r{cfg.lora_rank}+dropout-{cfg.lora_dropout}"
         if cfg.image_aug:
             run_id += "--image_aug"
+        # Append control type to run ID
+        if ROBOT_PLATFORM == "LIBERO_HUMANIZED":
+            run_id += "--joint_ctrl"
+        elif ROBOT_PLATFORM == "LIBERO_ORIGINAL":
+            run_id += "--eef_ctrl"
         if cfg.run_id_note is not None:
             run_id += f"--{cfg.run_id_note}"
     return run_id

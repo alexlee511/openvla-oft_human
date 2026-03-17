@@ -1,0 +1,43 @@
+1.
+cd /home/vsp1323/alex/openvla-oft_human
+python experiments/robot/libero/A_npz_to_hdf5.py \
+  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/libero_10_humanized \
+  --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_10_humanized_no_noops \
+  --filter_noops
+  
+2. 
+cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_10_humanized
+CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
+or
+CUDA_VISIBLE_DEVICES="" tfds build --overwrite
+
+3.
+Copy RLDS output to data root
+cp -r ~/tensorflow_datasets/libero10_joint/ ~/alex/openvla-oft_human/modified_libero_rlds/libero_10_joint_noops/
+
+
+# Step 1: build (you change this part each time)
+cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_Object_humanized
+CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
+or
+CUDA_VISIBLE_DEVICES="" tfds build --overwrite
+
+# Step 2: auto-copy (always the same, paste as-is)
+NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1) && DSNAME=$(basename $(dirname "$NEWEST")) && DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/${DSNAME}/1.0.0 && mkdir -p "$DEST" && cp -r "$NEWEST"/* "$DEST"/ && echo "Copied → $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
+
+
+rsync -rlptDvz --progress --no-g -e "ssh -p 304" \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_joint_noops \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
+
+
+rsync -rlptDvz --progress --no-g -e "ssh -p 304" \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs \
+/home/vsp1323/alex/openvla-oft_human/
+
+  
+  
+To avoid this in the future: use pkill -P <pid> to kill a process and all its children, or launch batch scripts with setsid so Ctrl+C propagates to the entire process group. You can also use kill -- -<pgid> to kill a whole process group
+
+ps -eo pid,args | grep -E 'A_run_batch_demo|A_run_pipeline|A_preprocess_human_demo' | grep -v grep | awk '{print $1}' | xargs kill -9 2>/dev/null; echo "Killed all lerobot preprocessing processes"
+
