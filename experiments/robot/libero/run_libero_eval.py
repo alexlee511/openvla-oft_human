@@ -111,8 +111,9 @@ class GenerateConfig:
 
     use_joint_pos: bool = False                       # If True, use JOINT_POSITION controller with 8D absolute actions
     joint_dq_max: float = 2.5                        # Per-joint max delta per step for JOINT_POSITION controller (margin=50x)
-    joint_kp: float = 500.0                           # PD controller kp gain (robosuite default=50, tested up to 2000)
-    joint_damping_ratio: float = 0.5                  # PD damping ratio (1.0=critical, <1=underdamped for faster tracking)
+    joint_kp: float = 120.0                           # PD controller kp gain (optimal from A_libero_joint_replay.py sweep)
+    joint_damping_ratio: float = 1.0                  # PD damping ratio (1.0=critically damped, matching replay controller)
+    joint_Kp_overshoot: float = 1.8                   # Outer overshoot multiplier (commands past target for faster convergence)
 
     lora_rank: int = 32                              # Rank of LoRA weight matrix (MAKE SURE THIS MATCHES TRAINING!)
 
@@ -288,12 +289,15 @@ def prepare_observation(obs, resize_size, use_joint_pos=False):
     return observation, img  # Return both processed observation and original image for replay
 
 
-def process_action(action, model_family, use_joint_pos=False, obs=None, dq_max=None):
+def process_action(action, model_family, use_joint_pos=False, obs=None, dq_max=None, Kp_overshoot=1.8):
     """Process action before sending to environment.
 
     For JOINT_POSITION mode:
       - Model outputs absolute joint positions (8D: 7 joints + 1 gripper).
-      - Convert joints to normalized delta: clip((q_target - q_cur) / dq_max, -1, 1).
+      - Convert joints to normalized delta with Kp overshoot:
+        clip(Kp * (q_target - q_cur) / dq_max, -1, 1).
+      - Kp > 1 commands overshoot so the PD controller converges faster
+        (goal_qpos = q_cur + Kp * (q_target - q_cur)).
       - Gripper passes through as raw -1/+1 (no inversion needed).
 
     For OSC_POSE mode (original):
@@ -306,7 +310,9 @@ def process_action(action, model_family, use_joint_pos=False, obs=None, dq_max=N
         q_cur = obs["robot0_joint_pos"]  # (7,)
         q_target = action[:7]            # absolute joint targets from model
         dq_des = q_target - q_cur        # desired delta
-        u = np.clip(dq_des / dq_max, -1.0, 1.0).astype(np.float32)  # normalized delta
+        # Kp > 1 commands overshoot so the PD controller converges faster.
+        # Matches A_libero_joint_replay.py: u = Kp * dq_des / dq_max
+        u = np.clip(Kp_overshoot * dq_des / dq_max, -1.0, 1.0).astype(np.float32)
 
         processed = np.zeros(8, dtype=np.float32)
         processed[:7] = u
@@ -536,7 +542,7 @@ def save_aggregate_results(task_results, rollout_dir, cfg):
         f"Controller: {'JOINT_POSITION' if cfg.use_joint_pos else 'OSC_POSE'}",
     ]
     if cfg.use_joint_pos:
-        lines.append(f"kp={cfg.joint_kp}, damping_ratio={cfg.joint_damping_ratio}, dq_max={cfg.joint_dq_max}")
+        lines.append(f"kp={cfg.joint_kp}, damping_ratio={cfg.joint_damping_ratio}, dq_max={cfg.joint_dq_max}, Kp_overshoot={cfg.joint_Kp_overshoot}")
     lines += [
         f"Num open-loop steps: {cfg.num_open_loop_steps}",
         f"Num trials per task: {cfg.num_trials_per_task}",
@@ -577,6 +583,7 @@ def save_aggregate_results(task_results, rollout_dir, cfg):
             "controller": "JOINT_POSITION" if cfg.use_joint_pos else "OSC_POSE",
             "joint_kp": cfg.joint_kp if cfg.use_joint_pos else None,
             "joint_damping_ratio": cfg.joint_damping_ratio if cfg.use_joint_pos else None,
+            "joint_Kp_overshoot": cfg.joint_Kp_overshoot if cfg.use_joint_pos else None,
             "num_open_loop_steps": cfg.num_open_loop_steps,
             "num_trials_per_task": cfg.num_trials_per_task,
         },
@@ -817,6 +824,9 @@ def run_episode(
         obs = env.get_observation()
 
     # --- JOINT_POSITION: patch controller output_max & kp for fast tracking ---
+    # Parameters matched to A_libero_joint_replay.py:
+    #   kp=120 (optimal from sweep), kd=2*sqrt(kp) (critically damped),
+    #   Kp=1.8 outer overshoot (in process_action), dq_max margin=50x
     dq_max = None
     if cfg.use_joint_pos:
         try:
@@ -827,13 +837,14 @@ def run_episode(
             dq_override[3] *= 2.0  # extra headroom for joint 4 (matches replay script)
             ctrl.output_max = dq_override
             ctrl.output_min = -dq_override
-            # Patch kp/kd for faster PD tracking.
-            # kp=1000, damping=0.3 → ~95% tracking over 10 steps (vs 34% at kp=300/damping=1.0).
+            # Patch kp/kd to match replay controller (A_libero_joint_replay.py).
+            # kp=120 found optimal via sweep (kp=500 REGRESSED 6/10→2/10).
+            # Critically damped: kd = 2*sqrt(kp), damping_ratio=1.0.
             ctrl.kp = np.ones(7) * cfg.joint_kp
-            ctrl.kd = 2.0 * np.sqrt(ctrl.kp) * cfg.joint_damping_ratio  # <1 = underdamped, faster tracking
+            ctrl.kd = 2.0 * np.sqrt(ctrl.kp) * cfg.joint_damping_ratio
             dq_max = np.array(ctrl.output_max, dtype=np.float32).reshape(-1)[:7]
             dq_max = np.maximum(dq_max, 1e-6)
-            logger.info(f"[JOINT_POS] Patched controller: output_max={dq_max}, kp={ctrl.kp[0]:.0f}, kd={ctrl.kd[0]:.2f}, damping={cfg.joint_damping_ratio}")
+            logger.info(f"[JOINT_POS] Patched controller: output_max={dq_max}, kp={ctrl.kp[0]:.0f}, kd={ctrl.kd[0]:.2f}, damping={cfg.joint_damping_ratio}, Kp_overshoot={cfg.joint_Kp_overshoot}")
         except Exception as e:
             dq_max = np.ones(7, dtype=np.float32) * cfg.joint_dq_max
             logger.warning(f"[JOINT_POS] Could not patch controller ({e}), using dq_max={cfg.joint_dq_max}")
@@ -911,7 +922,8 @@ def run_episode(
             rollout_ee_quat.append(np.array(obs["robot0_eef_quat"], dtype=np.float32))
 
             # Process action
-            action = process_action(raw_action, cfg.model_family, cfg.use_joint_pos, obs=obs, dq_max=dq_max)
+            action = process_action(raw_action, cfg.model_family, cfg.use_joint_pos, obs=obs, dq_max=dq_max,
+                                    Kp_overshoot=cfg.joint_Kp_overshoot)
             rollout_actions_env.append(np.array(action, dtype=np.float32))
 
             # Execute action in environment
@@ -1173,6 +1185,7 @@ def eval_libero(cfg: GenerateConfig) -> float:
             rf.write(f"Joint kp: {cfg.joint_kp}\n")
             rf.write(f"Joint damping ratio: {cfg.joint_damping_ratio}\n")
             rf.write(f"Joint dq max: {cfg.joint_dq_max}\n")
+            rf.write(f"Joint Kp overshoot: {cfg.joint_Kp_overshoot}\n")
         rf.write(f"Env image resolution: {cfg.env_img_res}\n")
         rf.write(f"\nTotal episodes: {total_episodes}\n")
         rf.write(f"Total successes: {total_successes}\n")
