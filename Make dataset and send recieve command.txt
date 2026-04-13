@@ -3,7 +3,8 @@ cd /home/vsp1323/alex/openvla-oft_human
 python experiments/robot/libero/A_npz_to_hdf5.py \
   --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/libero_10_humanized \
   --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_10_humanized_no_noops \
-  --filter_noops
+  --filter_noops \
+  --require_success
   
 2. 
 cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_10_humanized

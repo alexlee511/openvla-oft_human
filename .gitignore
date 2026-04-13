@@ -160,3 +160,4 @@ runs/
 # Rollout videos and wandb logs
 rollouts/
 wandb/
+experiments/logs/

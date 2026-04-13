@@ -1,5 +1,7 @@
 """Utils for evaluating policies in LIBERO simulation environments."""
 
+import contextlib
+import io
 import math
 import os
 
@@ -15,11 +17,16 @@ from experiments.robot.robot_utils import (
 )
 
 
-def get_libero_env(task, model_family, resolution=256, use_joint_pos=False):
+def get_libero_env(task, model_family, resolution=256, use_joint_pos=False, joint_substeps=1):
     """Initializes and returns the LIBERO environment, along with the task description.
 
     Args:
         use_joint_pos: If True, use JOINT_POSITION controller instead of default OSC_POSE.
+        joint_substeps: Number of sub-steps per action frame for JOINT_POSITION controller.
+            When >1, control_freq is set to the MuJoCo sim frequency (500 Hz) so each
+            sub-step corresponds to exactly 1 physics step.  The eval loop auto-computes
+            n_sub = sim_freq / base_control_freq (= 25 for 500/20) to preserve the
+            original 0.05 s inter-observation timing the model was trained on.
     """
     task_description = task.language
     task_bddl_file = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
@@ -31,7 +38,18 @@ def get_libero_env(task, model_family, resolution=256, use_joint_pos=False):
     }
     if use_joint_pos:
         env_args["controller"] = "JOINT_POSITION"
-    env = OffScreenRenderEnv(**env_args)
+        if joint_substeps > 1:
+            # Set control_freq = sim_freq (500 Hz) so each sub-step = 1 physics step.
+            # The eval loop auto-computes n_sub = sim_freq / 20 = 25.
+            env_args["control_freq"] = 500
+    if use_joint_pos and joint_substeps > 1:
+        # Suppress sampling-rate warnings printed during env construction (initial
+        # reset creates observables at 20 Hz which is below the 500 Hz control_freq).
+        # We patch the observable rates after each env.reset() in the eval loop.
+        with contextlib.redirect_stdout(io.StringIO()):
+            env = OffScreenRenderEnv(**env_args)
+    else:
+        env = OffScreenRenderEnv(**env_args)
     env.seed(0)  # IMPORTANT: seed seems to affect object positions even when using fixed initial state
     return env, task_description
 

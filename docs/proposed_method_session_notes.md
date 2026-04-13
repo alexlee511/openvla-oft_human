@@ -107,9 +107,17 @@ action = self.model(rearranged)  # (B, 8, 8)
 ### 資料
 
 - **LIBERO-90** 的原始 demo（robot style）
-- 用 IK 轉換產生的 human-likeness demo（human style）
+- 用 IK 轉換產生的 human-likeness demo（human style），由 `A_preprocess_human_demo_14.py` + `A_elbow_projector_20.py` 生成
 - 兩者 **paired**：同任務同 seed，TCP 軌跡（幾乎）相同，僅肘部姿態不同
 - TCP rotation 可能有微小差異
+- **Gripper commands 完全相同**：humanization 只重映射 null-space joints，不改 gripper
+- 資料來源：`humanized_sim.npz`（preferred）或 `humanized.npz`（fallback）
+  - `joint_states_demo` (T, 7) — 原始 robot joint positions
+  - `joint_states_human` (T, 7) — humanized joint positions（IK commanded，非 sim actual）
+  - `gripper_commands` (T,) — gripper commands（兩種 style 共用）
+- 使用 `joint_states_human`（commanded）而非 `joint_states_sim`（sim actual），因為 sim 版有控制器 tracking lag（~2° 平均，最大 24°）會引入噪音
+- 正規化：Panda joint limits → [-1, 1]，gripper 已在 [-1, 1]
+- 驗證集切分：按 **task** 分割（90% tasks → train, 10% → val），確保 val 測試的是對未見任務的泛化
 
 ### 架構選擇：Deterministic Sequence Autoencoder（非 CVAE）
 
@@ -119,57 +127,174 @@ action = self.model(rearranged)  # (B, 8, 8)
 - 避免 KL 的 posterior collapse 風險和額外超參調整
 - 未來若需多模態取樣，可加入 `use_vae=True` flag 升級
 
-### 網路架構
+### 預設超參數（`configs/default.yaml`）
+
+```yaml
+model:
+  encoder_type: bigru     # bigru | cnn
+  latent_dim: 64          # D_c: 每個 timestep 的 content code 維度
+  hidden_dim: 256         # Encoder / Decoder 隱藏維度
+  style_dim: 32           # Style embedding 維度
+  num_styles: 2           # robot=0, human=1
+  encoder_num_layers: 2   # BiGRU 層數 (或 CNN conv blocks)
+  encoder_dropout: 0.0
+  decoder_num_blocks: 3   # FiLM-conditioned conv blocks
+  decoder_kernel_size: 3
+
+loss:
+  lambda_recon: 1.0       # 重建（joints only）
+  lambda_fk: 5.0          # TCP position lock
+  lambda_mje: 0.1         # Minimum jerk（joints only）
+  lambda_content: 1.0     # c_robot ≈ c_human
+  lambda_cross: 1.0       # Cross-style reconstruction（full 8D）
+  lambda_gripper: 2.0     # 顯式 gripper 保存
+  lambda_cross_elbow: 0.5 # Cross-branch elbow geometric loss
+
+data:
+  chunk_len: 8            # 匹配 OpenVLA-OFT NUM_ACTIONS_CHUNK
+  stride: 4               # 滑動窗口步長
+  normalize: true         # 用 Panda joint limits 正規化到 [-1, 1]
+
+training:
+  epochs: 200
+  batch_size: 512
+  lr: 1.0e-3
+  lr_scheduler: cosine
+  warmup_epochs: 5
+  grad_clip: 1.0
+```
+
+### 網路架構（已實作於 `SCAE/scae/`）
 
 ```
-Encoder（1D-CNN 或 Bi-directional GRU）:
-  輸入: X ∈ R^(8×8)（8 步 × 8 維動作）
-  輸出: c ∈ R^(8×D_c)（8 個任務碼，D_c 建議 32~64）
+Encoder（BiGRU 或 1D-CNN，由 config 選擇）:
+  輸入: X ∈ R^(8×8)（8 步 × 8 維動作 = 7 joints + 1 gripper）
+  輸出: c ∈ R^(8×D_c)（8 個任務碼，D_c = 64）
+  ★ Encoder 看到完整 8D（含 gripper 作為上下文），因為 gripper 狀態
+    影響 approach_blend，而 approach_blend 直接決定了 human joints 與
+    demo joints 的差異程度。讓 encoder 能感知 gripper 上下文有助於
+    產生更好的 content code。
 
 Decoder（1D-CNN + FiLM conditioning on s）:
   輸入: c ∈ R^(8×D_c) + s ∈ {"robot", "human"}
-  輸出: X̂ ∈ R^(8×8)（8 步 × 8 維動作）
+  輸出: X̂ ∈ R^(8×8)（8 步 × 8 維動作 = 7 joints + 1 gripper）
+  ★ Decoder 輸出完整 8D。FiLM 層初始化為近 identity（γ≈0, β≈0），
+    因此 style 對 gripper 的調制天然趨近零；加上 L_Gripper 顯式監督，
+    確保 gripper 信號忠實穿透。
 
 Style s 表示: Learned Embedding（style_dim=32，可學習）
   s_vec = nn.Embedding(num_styles=2, embedding_dim=32)(s)
 ```
 
+**Gripper 設計決策**：
+- Robot 與 human demo 的 gripper commands **完全相同**（humanization 只改 joint 姿態）
+- Encoder 將 gripper 視為**上下文**（contextual input），而非 style-dependent 信號
+- 在 loss 層面，joints 和 gripper **分開監督**：
+  - `L_Recon` 只算 joints (dim 0–6)
+  - `L_Gripper` 獨立監督 gripper (dim 7)，使用較高權重 λ=2.0
+- 此設計讓 arm-style 學習不受 gripper 梯度干擾，同時保證 gripper 精度
+
+### 關鍵程式碼位置（SCAE）
+
+| 元件 | 檔案 | 說明 |
+|------|------|------|
+| SCAE 主模型 | `scae/scae.py` | Encoder + Decoder + Style Embedding 組裝 |
+| BiGRU / CNN Encoder | `scae/encoder.py` | 兩種 encoder 實作 + `build_encoder` 工廠函式 |
+| FiLM Decoder | `scae/decoder.py` | FiLMLayer → FiLMConv1dBlock → FiLMDecoder |
+| Loss 函數 | `scae/losses.py` | 7 項 loss 的計算邏輯 |
+| Config | `scae/config.py` | DataConfig / ModelConfig / LossConfig / TrainingConfig |
+| 可微分 FK | `scae/panda_fk.py` | Panda 7-DOF DH FK，含 TCP + Elbow pos |
+| Dataset | `scae/dataset.py` | Paired action chunk 載入 + 正規化 |
+| 訓練腳本 | `train.py` | Phase 1 完整訓練流程 |
+| 評估腳本 | `evaluate.py` | Sanity check + 可視化 |
+| 預設設定 | `configs/default.yaml` | 所有超參數預設值 |
+
 ### Loss 函數
 
-$$\mathcal{L}_{Phase1} = \mathcal{L}_{Recon} + \lambda_{FK}\mathcal{L}_{FK} + \beta\mathcal{L}_{MJE} + \gamma\mathcal{L}_{Content} + \eta\mathcal{L}_{Cross}$$
+$$\mathcal{L}_{Phase1} = \lambda_{r}\mathcal{L}_{Recon} + \lambda_{fk}\mathcal{L}_{FK} + \lambda_{mje}\mathcal{L}_{MJE} + \lambda_{c}\mathcal{L}_{Content} + \lambda_{x}\mathcal{L}_{Cross} + \lambda_{g}\mathcal{L}_{Gripper} + \lambda_{e}\mathcal{L}_{CrossElbow}$$
 
-| Loss | 公式 | 作用 |
-|------|------|------|
-| $\mathcal{L}_{Recon}$ | $\|\hat{X} - X\|_1$ 或 Huber | 基本重建 |
-| $\mathcal{L}_{FK}$ | $\text{MSE}(\text{FK}_{pos}(\hat{X}), \text{TCP}^{GT}_{pos})$ | TCP 鎖定，確保夾爪位置不偏 |
-| $\mathcal{L}_{MJE}$ | $\sum_t \|\hat{X}_t - 3\hat{X}_{t-1} + 3\hat{X}_{t-2} - \hat{X}_{t-3}\|^2$ | 最小 jerk 約束，壓制高頻抖動 |
-| $\mathcal{L}_{Content}$ | $\|c_{reg} - c_{hum}\|^2$ | 強迫 encoder 忽略 style，只編碼任務意圖 |
-| $\mathcal{L}_{Cross}$ | $\|\text{Dec}(c_{reg}, s_{hum}) - X_{hum}\|_1 + \|\text{Dec}(c_{hum}, s_{reg}) - X_{reg}\|_1$ | 強化 style 解耦：用同一個 c 切換 s 重建對方 |
+| Loss | 公式 | 作用 | 預設 λ |
+|------|------|------|--------|
+| $\mathcal{L}_{Recon}$ | $\|\hat{X}_{joints} - X_{joints}\|_1$（**僅 7D joints**） | 基本重建（不含 gripper，避免梯度干擾） | 1.0 |
+| $\mathcal{L}_{FK}$ | $\text{MSE}(\text{FK}_{tcp}(\hat{X}), \text{FK}_{tcp}(X))$（含 self + cross 四路） | TCP 鎖定，確保夾爪位置不偏 | 5.0 |
+| $\mathcal{L}_{MJE}$ | $\sum_t \|\hat{X}^{joints}_t - 3\hat{X}^{joints}_{t-1} + 3\hat{X}^{joints}_{t-2} - \hat{X}^{joints}_{t-3}\|^2$ | 最小 jerk 約束，壓制高頻抖動（僅 joints） | 0.1 |
+| $\mathcal{L}_{Content}$ | $\|c_{robot} - c_{human}\|^2$ | 強迫 encoder 忽略 style，只編碼任務意圖 | 1.0 |
+| $\mathcal{L}_{Cross}$ | $\frac{1}{2}(\|\text{Dec}(c_r, s_h) - X_h\|_1 + \|\text{Dec}(c_h, s_r) - X_r\|_1)$（**完整 8D**） | 強化 style 解耦：cross-style 需重建全動作含 gripper | 1.0 |
+| $\mathcal{L}_{Gripper}$ | $\frac{1}{4}\sum_{\text{4 branches}}\|\hat{X}_{grip} - X_{grip}\|_1$ | **顯式 gripper 保存**：self + cross 所有分支的 gripper 忠實度 | 2.0 |
+| $\mathcal{L}_{CrossElbow}$ | $\frac{1}{2}(\text{MSE}(\text{FK}_{elbow}(\hat{X}_{r2h}), \text{FK}_{elbow}(X_h)) + \text{MSE}(\text{FK}_{elbow}(\hat{X}_{h2r}), \text{FK}_{elbow}(X_r)))$ | cross-decoded 肘部應匹配目標 style 的 GT 肘部位置 | 0.5 |
 
 **注意事項**：
-- $\mathcal{L}_{MJE}$ 只對 7D joint 算 jerk，gripper 可不算或用較弱正則
+- $\mathcal{L}_{Recon}$ **僅對 7D joints**，避免 gripper 誤差梯度干擾 arm style 學習
+- $\mathcal{L}_{Gripper}$ **獨立監督 dim 7 (gripper)**，使用較高 λ=2.0 確保精確
+- $\mathcal{L}_{Cross}$ 用**完整 8D**（因為 cross-style 仍需精確重建 gripper）
+- $\mathcal{L}_{CrossElbow}$ 提供幾何空間監督（Cartesian elbow pos），比 action-space L1 更直接
+- $\mathcal{L}_{MJE}$ 只對 7D joints，gripper 是離散指令不需平滑
+- $\mathcal{L}_{FK}$ 含四路：self-robot, self-human, cross-r2h, cross-h2r，全部對比 robot TCP
 - $\mathcal{L}_{Content}$ 假設 paired demo 時間步對齊；若有偏移可用 soft-DTW
-- $\mathcal{L}_{FK}$ 需要可微分的 FK 函數
 - chunk=8 對 MJE 足夠（需至少 4 個時間步：t, t-1, t-2, t-3）
+- 可微分 FK 已實作於 `panda_fk.py`，含 TCP position + elbow (link4) position
 
 ### Phase 1 產出物
 
-- **凍結 Encoder**：`Enc(X) → c`
-- **凍結 Decoder**：`Dec(c, s) → X̂`
+- **凍結 Encoder**：`Enc(X) → c`，X 為完整 8D（joints + gripper）
+- **凍結 Decoder**：`Dec(c, s) → X̂`，輸出完整 8D
 - 兩者在 Phase 2 中 `requires_grad=False` 但**不是** `torch.no_grad()`（需讓梯度穿過 decoder 回傳到 Bridge）
 
-### Phase 1 驗證（Phase 2 之前必做）
+### Phase 1 訓練步驟（每個 batch）
+
+```python
+# train_step 流程（見 train.py）:
+x_robot = batch["robot"]  # (B, 8, 8)  paired robot chunk
+x_human = batch["human"]  # (B, 8, 8)  paired human chunk
+
+# 1. Encode both styles（encoder 看完整 8D）
+c_robot = model.encode(x_robot)    # (B, 8, D_c)
+c_human = model.encode(x_human)    # (B, 8, D_c)
+
+# 2. Self-reconstruction（各自 decode 回自己的 style）
+x_hat_robot = model.decode(c_robot, s=0)  # Dec(c_r, s_r)
+x_hat_human = model.decode(c_human, s=1)  # Dec(c_h, s_h)
+
+# 3. Cross-reconstruction（用對方的 style 解碼）
+x_hat_r2h = model.decode(c_robot, s=1)    # Dec(c_r, s_h) → 應 ≈ x_human
+x_hat_h2r = model.decode(c_human, s=0)    # Dec(c_h, s_r) → 應 ≈ x_robot
+
+# 4. 計算 7 項 loss → backward → optimizer.step()
+```
+
+### Phase 1 驗證（Phase 2 之前必做，見 `evaluate.py`）
 
 ```python
 # 在 LIBERO-Goal 上做 sanity check（跨 task suite 泛化能力）
-for chunk in LIBERO_Goal_chunks:
-    c = Encoder(chunk)
-    recon_robot = Decoder(c, s="robot")
-    recon_human = Decoder(c, s="human")
-    
-    print(f"Robot recon error: {L1(recon_robot, chunk)}")    # 應該很小
-    print(f"TCP consistency: {L1(FK(recon_human), FK(chunk))}")  # 應該很小
-    print(f"Human jerk: {compute_jerk(recon_human)}")         # 應該平滑
+# evaluate.py 輸出的核心指標：
+metrics = {
+    # 重建品質（normalized + 弧度空間）
+    "recon_l1_robot":      ...,  # self-recon robot L1，應該很小
+    "recon_l1_human":      ...,  # self-recon human L1，應該很小
+    "cross_l1_r2h":        ...,  # cross robot→human L1
+    "cross_l1_h2r":        ...,  # cross human→robot L1
+
+    # Content code 一致性
+    "content_mse":         ...,  # c_robot ≈ c_human?
+    "content_cosine":      ...,  # 應趨近 1.0
+
+    # TCP 位置誤差（毫米）
+    "tcp_rmse_self_robot": ...,  # 應 < 5mm
+    "tcp_rmse_cross_r2h":  ...,  # cross-style 也應 < 5mm
+
+    # 肘部位置（style signal 對比）
+    "elbow_diff_gt":       ...,  # GT robot vs human 的肘部差異（style 信號大小）
+    "elbow_diff_r2h_vs_h": ...,  # cross-decoded 肘部 vs human GT（應很小）
+
+    # Gripper 忠實度
+    "gripper_l1_robot":    ...,  # 應趨近 0
+    "gripper_l1_cross_r2h": ..., # cross 分支也應趨近 0
+
+    # 平滑度（jerk，越小越平滑）
+    "jerk_robot_gt":       ...,  # 原始 robot demo 的 jerk
+    "jerk_human_recon":    ...,  # decoded human 比 GT human 更平滑?
+    "jerk_cross_r2h":      ...,  # cross-style 的平滑度
+}
 ```
 
 泛化合理性：style transfer 核心是肘部冗餘自由度的 IK 重映射，屬於運動學操作，與任務語義無關。LIBERO-90 和 LIBERO-Goal 共享同一機器人（7DoF + gripper），動作空間（R^8）相同。
@@ -483,13 +608,17 @@ bridge_mlp.load_state_dict(new_state_dict, strict=False)
 |------|------|------|
 | AE 類型 | Deterministic（非 CVAE+KL） | LIBERO demo 幾乎一致，不需 stochastic z；避免 posterior collapse |
 | Phase 1 資料 | LIBERO-90 paired | Phase 2 用不同 task suite (LIBERO-Goal) 測試泛化 |
+| Phase 1 Encoder 輸入 | 完整 8D（joints + gripper） | Gripper 作為上下文：gripper 狀態影響 approach_blend，encoder 需感知 |
+| Phase 1 Decoder 輸出 | 完整 8D（joints + gripper） | FiLM 初始化近 identity → gripper 調制天然趨近零；L_Gripper 顯式守護 |
+| Phase 1 Gripper 監督 | joints/gripper 分離監督 | L_Recon 只算 joints；L_Gripper 獨立算 gripper (λ=2.0)，避免梯度干擾 |
+| Phase 1 Loss 數量 | 7 項（+Gripper, +CrossElbow） | 原 5 項 + 顯式 gripper 保存 + 幾何肘部監督 |
 | Phase 2 human GT | On-the-fly 由 frozen decoder 即時生成 | 不需預先做 IK 轉換；計算成本 <1ms |
 | c_gold 來源 | 兩軌都用 robot demo 算 | 保持一致性；content loss 保證 c_reg ≈ c_hum |
 | 圖像 | Track A/B 共用 robot 圖像 | TCP 位置一致，視角幾乎相同 |
 | Style 表示 | Learned Embedding (dim=32) | 可學習、未來易擴展 |
 | Decoder 凍結 | requires_grad=False（非 no_grad） | 讓梯度穿過 decoder 流向 Bridge |
 | Track A/B 權重 | α=0.8 / (1-α)=0.2 | Robot GT 可靠主導；pseudo-human GT 輔助學 style |
-| D_c | 32~64 | 平衡表達力與 latent matching 難度 |
+| D_c | 64（預設） | 平衡表達力與 latent matching 難度 |
 
 ---
 
@@ -497,8 +626,9 @@ bridge_mlp.load_state_dict(new_state_dict, strict=False)
 
 | 風險 | 嚴重度 | 緩解方法 |
 |------|--------|----------|
-| Phase 1 AE 在 LIBERO-Goal 泛化失敗 | 🔴 高 | Phase 2 前做 sanity check；若失敗則 Phase 1 加入更多樣動作資料 |
+| Phase 1 AE 在 LIBERO-Goal 泛化失敗 | 🔴 高 | Phase 2 前做 sanity check（`evaluate.py`）；若失敗則 Phase 1 加入更多樣動作資料 |
 | IK 產生的 human demo 品質差 | 🔴 高 | Phase 1 前可視化 paired demo；確認 FK/jerk/奇異點 |
+| Gripper 信號被 style FiLM 污染 | 🔴 高 | FiLM 初始化近 identity + 顯式 L_Gripper (λ=2.0) + 監控 gripper L1 指標 |
 | Pseudo-human GT 的 noise 被 VLA 放大 | 🟡 中 | α=0.8 讓 robot GT 主導；L_latent 比 L_action 更重要在 Track B |
 | Exposure bias（rollout proprio 分佈偏移） | 🟡 中 | Scheduled Sampling / DAgger-style state mixing |
 | Style Classifier 過度干擾主任務 | 🟢 低 | λ_aux=0.05-0.1 控制 |

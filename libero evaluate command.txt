@@ -1,5 +1,5 @@
 python experiments/robot/libero/run_libero_eval.py \
-  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--10000_chkpt \
+  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--10000_chkpt \
   --task_suite_name libero_10 \
   --use_l1_regression true \
   --use_proprio true \
@@ -9,3 +9,45 @@ python experiments/robot/libero/run_libero_eval.py \
   --use_wandb true \
   --wandb_entity alexlee511-national-taipei-university-of-technology \
   --wandb_project openvla-oft_human
+  
+python experiments/robot/libero/run_libero_eval.py \
+  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/openvla-7b+libero_10_joint_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
+  --task_suite_name libero_10 \
+  --use_l1_regression true \
+  --use_proprio true \
+  --use_joint_pos true \
+  --num_images_in_input 2 \
+  --center_crop true \
+  --num_trials_per_task 50 \
+  --use_wandb true \
+  --wandb_entity alexlee511-national-taipei-university-of-technology \
+  --wandb_project openvla-oft
+  
+python experiments/robot/libero/run_libero_eval.py \
+  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
+  --task_suite_name libero_10 \
+  --use_l1_regression true \
+  --use_proprio true \
+  --use_joint_pos true \
+  --num_images_in_input 2 \
+  --center_crop true \
+  --num_trials_per_task 50 \
+  --use_wandb true \
+  --wandb_entity alexlee511-national-taipei-university-of-technology \
+  --wandb_project openvla-oft_human
+  
+# For each .npz in the rollout_data directory:
+python /home/vsp1323/alex/LIBERO/scripts/A_human_likeness_evaluate.py \
+  --rollout_npz <path_to_episode_npz> \
+  --suite libero_10 \
+  --out_dir <output_dir>
+  
+# After eval 1 (joint):
+python experiments/robot/libero/A_vla_rollout_hl.py \
+    --rollout_dir ./rollouts/libero_10/<joint_checkpoint>/<datetime>/ \
+    --suite libero_10
+
+# After eval 2 (humanized):
+python experiments/robot/libero/A_vla_rollout_hl.py \
+    --rollout_dir ./rollouts/libero_10/<humanized_checkpoint>/<datetime>/ \
+    --suite libero_10

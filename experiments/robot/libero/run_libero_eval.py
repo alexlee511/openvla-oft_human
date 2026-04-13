@@ -107,13 +107,14 @@ class GenerateConfig:
     use_proprio: bool = True                         # Whether to include proprio state in input
 
     center_crop: bool = True                         # Center crop? (if trained w/ random crop image aug)
-    num_open_loop_steps: int = 25                     # Number of actions to execute open-loop before requerying policy
+    num_open_loop_steps: int = 8                      # Number of actions to execute open-loop before requerying policy
 
     use_joint_pos: bool = False                       # If True, use JOINT_POSITION controller with 8D absolute actions
     joint_dq_max: float = 2.5                        # Per-joint max delta per step for JOINT_POSITION controller (margin=50x)
     joint_kp: float = 120.0                           # PD controller kp gain (optimal from A_libero_joint_replay.py sweep)
     joint_damping_ratio: float = 1.0                  # PD damping ratio (1.0=critically damped, matching replay controller)
-    joint_Kp_overshoot: float = 1.8                   # Outer overshoot multiplier (commands past target for faster convergence)
+    joint_Kp_overshoot: float = 2.5                   # Outer overshoot multiplier (matching A_libero_joint_replay.py default)
+    joint_substeps: int = 1                           # Sub-steps per action for JOINT_POSITION (1=disabled, >1=auto-compute from sim_freq/control_freq=25 for 500Hz/20Hz). Higher control_freq helps PD converge.
 
     lora_rank: int = 32                              # Rank of LoRA weight matrix (MAKE SURE THIS MATCHES TRAINING!)
 
@@ -200,15 +201,31 @@ def check_unnorm_key(cfg: GenerateConfig, model) -> None:
 
     unnorm_key = cfg.unnorm_key if cfg.unnorm_key else cfg.task_suite_name
 
-    # In some cases, the key must be manually modified (e.g. after training on a modified version of the dataset
-    # with the suffix "_no_noops" in the dataset name)
-    if unnorm_key not in model.norm_stats and f"{unnorm_key}_no_noops" in model.norm_stats:
-        unnorm_key = f"{unnorm_key}_no_noops"
+    # Try exact match first
+    if unnorm_key in model.norm_stats:
+        cfg.unnorm_key = unnorm_key
+        return
 
-    assert unnorm_key in model.norm_stats, f"Action un-norm key {unnorm_key} not found in VLA `norm_stats`!"
+    # Try common suffixed variants
+    for suffix in ["_no_noops", "_joint_noops", "_joint_no_noops",
+                   "_humanized_no_noops", "_humanized_noops", "_humanized"]:
+        candidate = f"{unnorm_key}{suffix}"
+        if candidate in model.norm_stats:
+            cfg.unnorm_key = candidate
+            return
 
-    # Set the unnorm_key in cfg
-    cfg.unnorm_key = unnorm_key
+    # Last resort: if norm_stats has exactly one key, use it
+    if len(model.norm_stats) == 1:
+        only_key = next(iter(model.norm_stats))
+        logger.info(f"Auto-selected unnorm_key '{only_key}' (only key in norm_stats)")
+        cfg.unnorm_key = only_key
+        return
+
+    assert False, (
+        f"Action un-norm key '{unnorm_key}' not found in VLA `norm_stats`!\n"
+        f"Available keys: {list(model.norm_stats.keys())}\n"
+        f"Pass --unnorm_key explicitly."
+    )
 
 
 def setup_logging(cfg: GenerateConfig):
@@ -542,7 +559,7 @@ def save_aggregate_results(task_results, rollout_dir, cfg):
         f"Controller: {'JOINT_POSITION' if cfg.use_joint_pos else 'OSC_POSE'}",
     ]
     if cfg.use_joint_pos:
-        lines.append(f"kp={cfg.joint_kp}, damping_ratio={cfg.joint_damping_ratio}, dq_max={cfg.joint_dq_max}, Kp_overshoot={cfg.joint_Kp_overshoot}")
+        lines.append(f"kp={cfg.joint_kp}, damping_ratio={cfg.joint_damping_ratio}, dq_max={cfg.joint_dq_max}, Kp_overshoot={cfg.joint_Kp_overshoot}, substeps={cfg.joint_substeps}")
     lines += [
         f"Num open-loop steps: {cfg.num_open_loop_steps}",
         f"Num trials per task: {cfg.num_trials_per_task}",
@@ -814,8 +831,22 @@ def run_episode(
     log_file=None,
 ):
     """Run a single episode in the environment."""
-    # Reset environment
-    env.reset()
+    # Reset environment (suppress sampling-rate print warnings for sub-stepping)
+    if cfg.use_joint_pos and cfg.joint_substeps > 1:
+        import contextlib, io as _io
+        with contextlib.redirect_stdout(_io.StringIO()):
+            env.reset()
+    else:
+        env.reset()
+
+    # After reset, patch observable sampling rates to match control_freq for sub-stepping.
+    # env.reset() re-creates all observables at the default 20 Hz, so this must be done
+    # after every reset — not just once after env creation.
+    if cfg.use_joint_pos and cfg.joint_substeps > 1:
+        base_env = env.env
+        effective_freq = int(round(1.0 / base_env.model_timestep))  # sim_freq (500)
+        for observable in base_env._observables.values():
+            observable.set_sampling_rate(effective_freq)
 
     # Set initial state if provided
     if initial_state is not None:
@@ -844,7 +875,7 @@ def run_episode(
             ctrl.kd = 2.0 * np.sqrt(ctrl.kp) * cfg.joint_damping_ratio
             dq_max = np.array(ctrl.output_max, dtype=np.float32).reshape(-1)[:7]
             dq_max = np.maximum(dq_max, 1e-6)
-            logger.info(f"[JOINT_POS] Patched controller: output_max={dq_max}, kp={ctrl.kp[0]:.0f}, kd={ctrl.kd[0]:.2f}, damping={cfg.joint_damping_ratio}, Kp_overshoot={cfg.joint_Kp_overshoot}")
+            logger.info(f"[JOINT_POS] Patched controller: output_max={dq_max}, kp={ctrl.kp[0]:.0f}, kd={ctrl.kd[0]:.2f}, damping={cfg.joint_damping_ratio}, Kp_overshoot={cfg.joint_Kp_overshoot}, substeps={cfg.joint_substeps}")
         except Exception as e:
             dq_max = np.ones(7, dtype=np.float32) * cfg.joint_dq_max
             logger.warning(f"[JOINT_POS] Could not patch controller ({e}), using dq_max={cfg.joint_dq_max}")
@@ -872,6 +903,23 @@ def run_episode(
     rollout_actions_raw = []     # (T, 8 or 7) raw model output actions
     rollout_actions_env = []     # (T, 8 or 7) actions sent to env
     max_steps = TASK_MAX_STEPS[cfg.task_suite_name]
+    n_sub = cfg.joint_substeps if cfg.use_joint_pos else 1
+
+    # For sub-stepping: get the robosuite base env for low-level physics stepping
+    # without camera rendering on intermediate sub-steps.
+    _robo_env = None
+    _robo_robot = None
+    if n_sub > 1:
+        _robo_env = env.env  # unwrap LIBERO wrapper → robosuite env (has .sim)
+        _robo_robot = _robo_env.robots[0]
+        # Auto-compute n_sub from physics params so that total physics steps per
+        # model action exactly match baseline (sim_freq / base_control_freq = 25
+        # for 500 Hz / 20 Hz).  This preserves the 0.05 s inter-observation time
+        # the model was trained on, avoiding distribution shift.
+        sim_freq = int(round(1.0 / _robo_env.model_timestep))  # 500
+        base_control_freq = 20  # original LIBERO controller rate
+        n_sub = sim_freq // base_control_freq  # 25
+        print(f"[Sub-step] auto n_sub={n_sub} (sim_freq={sim_freq}, base_cf={base_control_freq})")
 
     # Run episode
     success = False
@@ -879,7 +927,19 @@ def run_episode(
         while t < max_steps + cfg.num_steps_wait:
             # Do nothing for the first few timesteps to let objects stabilize
             if t < cfg.num_steps_wait:
-                obs, reward, done, info = env.step(get_libero_dummy_action(cfg.model_family, cfg.use_joint_pos))
+                dummy = get_libero_dummy_action(cfg.model_family, cfg.use_joint_pos)
+                if n_sub > 1:
+                    # Run n_sub-1 physics steps manually (no camera rendering),
+                    # then 1 full env.step().  Keeps total settling time = n_sub * dt.
+                    n_physics_wait = int(round(_robo_env.control_timestep / _robo_env.model_timestep))
+                    for _ in range(n_sub - 1):
+                        policy_step = True
+                        for _ in range(n_physics_wait):
+                            _robo_env.sim.forward()
+                            _robo_env._pre_action(dummy, policy_step)
+                            _robo_env.sim.step()
+                            policy_step = False
+                obs, reward, done, info = env.step(dummy)
                 t += 1
                 continue
 
@@ -921,16 +981,59 @@ def run_episode(
             rollout_ee_pos.append(np.array(obs["robot0_eef_pos"], dtype=np.float32))
             rollout_ee_quat.append(np.array(obs["robot0_eef_quat"], dtype=np.float32))
 
-            # Process action
-            action = process_action(raw_action, cfg.model_family, cfg.use_joint_pos, obs=obs, dq_max=dq_max,
-                                    Kp_overshoot=cfg.joint_Kp_overshoot)
-            rollout_actions_env.append(np.array(action, dtype=np.float32))
+            # Execute action with sub-step interpolation for JOINT_POSITION
+            if cfg.use_joint_pos and n_sub > 1:
+                # Sub-step interpolation: run n_sub steps per model action.
+                # Intermediate sub-steps use low-level physics stepping (no camera
+                # rendering) for speed.  Only the final sub-step calls env.step()
+                # to get full observations.
+                q_cur = np.array(obs["robot0_joint_pos"], dtype=np.float32)
+                q_target = np.array(raw_action[:7], dtype=np.float32)
+                grip_cmd = float(np.sign(raw_action[7]))
 
-            # Execute action in environment
-            obs, reward, done, info = env.step(action.tolist())
-            if done:
-                success = True
-                break
+                n_physics = int(round(_robo_env.control_timestep / _robo_env.model_timestep))
+
+                for s_idx in range(n_sub):
+                    alpha = (s_idx + 1.0) / n_sub
+                    q_sub = q_cur * (1.0 - alpha) + q_target * alpha
+                    # Read current joint pos directly from sim data (fast, no rendering)
+                    q_now = np.array(_robo_robot._joint_positions, dtype=np.float32)
+                    dq_des = q_sub - q_now
+                    u = np.clip(cfg.joint_Kp_overshoot * dq_des / dq_max, -1.0, 1.0).astype(np.float32)
+                    sub_action = np.zeros(8, dtype=np.float32)
+                    sub_action[:7] = u
+                    sub_action[7] = grip_cmd
+
+                    if s_idx < n_sub - 1:
+                        # Intermediate sub-step: step physics without camera rendering.
+                        # Replicates robosuite base.step() inner loop minus _update_observables().
+                        # Do NOT increment _robo_env.timestep or cur_time here — those must
+                        # only advance via the final env.step() to avoid tripping the horizon
+                        # limit (which would set self.done=True and crash subsequent steps).
+                        policy_step = True
+                        for _ in range(n_physics):
+                            _robo_env.sim.forward()
+                            _robo_env._pre_action(sub_action, policy_step)
+                            _robo_env.sim.step()
+                            policy_step = False
+                    else:
+                        # Final sub-step: full env.step() with camera rendering & obs
+                        obs, reward, done, info = env.step(sub_action.tolist())
+                        if done:
+                            success = True
+
+                rollout_actions_env.append(np.array(sub_action, dtype=np.float32))
+                if success:
+                    break
+            else:
+                # Standard single-step execution
+                action = process_action(raw_action, cfg.model_family, cfg.use_joint_pos, obs=obs, dq_max=dq_max,
+                                        Kp_overshoot=cfg.joint_Kp_overshoot)
+                rollout_actions_env.append(np.array(action, dtype=np.float32))
+                obs, reward, done, info = env.step(action.tolist())
+                if done:
+                    success = True
+                    break
             t += 1
 
     except Exception as e:
@@ -1001,7 +1104,9 @@ def run_task(
     initial_states, all_initial_states = load_initial_states(cfg, task_suite, task_id, log_file)
 
     # Initialize environment and get task description
-    env, task_description = get_libero_env(task, cfg.model_family, resolution=cfg.env_img_res, use_joint_pos=cfg.use_joint_pos)
+    env, task_description = get_libero_env(task, cfg.model_family, resolution=cfg.env_img_res,
+                                           use_joint_pos=cfg.use_joint_pos,
+                                           joint_substeps=cfg.joint_substeps)
 
     # Start episodes
     task_episodes, task_successes = 0, 0
@@ -1186,6 +1291,7 @@ def eval_libero(cfg: GenerateConfig) -> float:
             rf.write(f"Joint damping ratio: {cfg.joint_damping_ratio}\n")
             rf.write(f"Joint dq max: {cfg.joint_dq_max}\n")
             rf.write(f"Joint Kp overshoot: {cfg.joint_Kp_overshoot}\n")
+            rf.write(f"Joint substeps: {cfg.joint_substeps}\n")
         rf.write(f"Env image resolution: {cfg.env_img_res}\n")
         rf.write(f"\nTotal episodes: {total_episodes}\n")
         rf.write(f"Total successes: {total_successes}\n")
