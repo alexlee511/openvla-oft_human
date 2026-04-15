@@ -89,18 +89,29 @@ def discover_demos_from_task_root(task_root, require_success=False):
     """
     Given a task root like:
         /home/vsp1323/LIBERO/scripts/KITCHEN_SCENE3_..._demo/
-    Find all humanized_sim.npz files in:
-        <task_root>/humanized_demo/demo_XX/humanized_sim.npz
+    Find all *_sim.npz files in:
+        <task_root>/humanized_demo/demo_XX/humanized_sim.npz   (humanized)
+        <task_root>/original_demo/demo_XX/original_sim.npz     (original replay)
+    Tries humanized_demo first, falls back to original_demo.
     Returns list of dicts with sim_npz_path, demo_idx, task_name, success.
     """
-    humanized_dir = os.path.join(task_root, "humanized_demo")
-    if not os.path.isdir(humanized_dir):
+    # Try humanized first, then original
+    demo_subdir = None
+    npz_filename = None
+    for subdir, fname in [("humanized_demo", "humanized_sim.npz"),
+                          ("original_demo", "original_sim.npz")]:
+        candidate = os.path.join(task_root, subdir)
+        if os.path.isdir(candidate):
+            demo_subdir = candidate
+            npz_filename = fname
+            break
+    if demo_subdir is None:
         return []
 
     demos = []
-    for demo_folder in sorted(os.listdir(humanized_dir)):
-        demo_path = os.path.join(humanized_dir, demo_folder)
-        sim_npz_path = os.path.join(demo_path, "humanized_sim.npz")
+    for demo_folder in sorted(os.listdir(demo_subdir)):
+        demo_path = os.path.join(demo_subdir, demo_folder)
+        sim_npz_path = os.path.join(demo_path, npz_filename)
         if not os.path.isfile(sim_npz_path):
             continue
 
@@ -130,13 +141,17 @@ def discover_demos_from_task_root(task_root, require_success=False):
 
 def discover_all_task_roots(task_roots_dir):
     """
-    Scan a directory for folders that contain humanized_demo/ subdirectories.
+    Scan a directory for folders that contain humanized_demo/ or original_demo/ subdirectories.
     Returns dict: task_name -> task_root_path.
     """
     task_roots = {}
     for entry in sorted(os.listdir(task_roots_dir)):
         full_path = os.path.join(task_roots_dir, entry)
-        if os.path.isdir(full_path) and os.path.isdir(os.path.join(full_path, "humanized_demo")):
+        if not os.path.isdir(full_path):
+            continue
+        has_demos = (os.path.isdir(os.path.join(full_path, "humanized_demo"))
+                     or os.path.isdir(os.path.join(full_path, "original_demo")))
+        if has_demos:
             task_name = entry
             if task_name.endswith("_demo"):
                 task_name = task_name[:-len("_demo")]

@@ -1,13 +1,24 @@
 1.
 cd /home/vsp1323/alex/openvla-oft_human
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/libero_10_humanized \
+  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/result/humanized_npz/libero_10_humanized \
   --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_10_humanized_no_noops \
   --filter_noops \
   --require_success
-  
+
+python experiments/robot/libero/A_npz_to_hdf5.py \
+    --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/result/original_npz/libero_10 \
+    --output_dir ./LIBERO/libero/datasets/libero_10_joint_no_noops \
+    --filter_noops --require_success
+    
+python experiments/robot/libero/A_convert_libero_to_joint.py \
+    --libero_raw_data_dir /home/vsp1323/alex/LIBERO/libero/datasets/libero_10 \
+    --libero_target_dir ./LIBERO/libero/datasets/libero_10_joint_no_noops \
+    --filter_noops
+    
 2. 
 cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_10_humanized
+
 CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
 or
 CUDA_VISIBLE_DEVICES="" tfds build --overwrite
@@ -24,11 +35,15 @@ or
 CUDA_VISIBLE_DEVICES="" tfds build --overwrite
 
 # Step 2: auto-copy (always the same, paste as-is)
-NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1) && DSNAME=$(basename $(dirname "$NEWEST")) && DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/${DSNAME}/1.0.0 && mkdir -p "$DEST" && cp -r "$NEWEST"/* "$DEST"/ && echo "Copied → $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
+NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1) && DSNAME=$(basename $(dirname "$NEWEST")) && DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/${DSNAME}_no_noops/1.0.0 && mkdir -p "$DEST" && cp -r "$NEWEST"/* "$DEST"/ && echo "Copied → $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 
 
 rsync -rlptDvz --progress --no-g -e "ssh -p 304" \
-/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_joint_noops \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_joint_no_noops \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
+
+rsync -rlptDvz --progress --no-g -e "ssh -p 31427" \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_humanized_no_noops \
 vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
 
 

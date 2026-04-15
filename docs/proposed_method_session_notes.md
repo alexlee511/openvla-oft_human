@@ -166,6 +166,8 @@ training:
 
 ### 網路架構（已實作於 `SCAE/scae/`）
 
+#### 標準 SCAE
+
 ```
 Encoder（BiGRU 或 1D-CNN，由 config 選擇）:
   輸入: X ∈ R^(8×8)（8 步 × 8 維動作 = 7 joints + 1 gripper）
@@ -186,6 +188,39 @@ Style s 表示: Learned Embedding（style_dim=32，可學習）
   s_vec = nn.Embedding(num_styles=2, embedding_dim=32)(s)
 ```
 
+#### GeoSCAE（Geometry-Aware Residual 變體，`scae/scae_geo.py`）
+
+與標準 SCAE 共享 Encoder，但 Decoder 改為**殘差 + 幾何條件化**：
+
+```
+GeoSCAE 結構:
+  Encoder: 完全相同的 BiGRU / CNN → c ∈ R^(8×D_c)
+
+  Geometric Feature Extractor:
+    輸入: X_input ∈ R^(8×8)（原始輸入動作 chunk）
+    → denormalize → FK(joint_7D) → 4 個 keypoints (shoulder, elbow, wrist, TCP)
+    → concatenate: (B, T, 12) → GeoMLP → geo ∈ R^(B, T, geo_dim=32)
+
+  Residual Decoder（FiLMGeoDecoder）:
+    輸入: c ∈ R^(8×D_c) + geo ∈ R^(8×geo_dim) + s_vec ∈ R^32
+    輸出: Δ ∈ R^(8×8)（殘差預測）
+    最終輸出: X̂ = X_input + Δ
+
+  ★ 殘差公式 + 幾何條件化的優點：
+    1. 學的是 style delta（Δ）而非絕對 joint 配置 → OOD 泛化更好
+    2. FK keypoints 提供 Cartesian 空間錨點 → decoder 知道手臂幾何姿態
+    3. 對未見過的 joint 配置，殘差自然趨近零 → 安全降級
+```
+
+**GeoSCAE vs SCAE 差異**：
+| 特性 | SCAE | GeoSCAE |
+|------|------|---------|
+| Decoder 類型 | FiLMDecoder（直接輸出 X̂） | FiLMGeoDecoder（預測殘差 Δ） |
+| 幾何條件 | 無 | FK keypoints → GeoMLP → geo features |
+| 輸出公式 | X̂ = Dec(c, s) | X̂ = X_input + Dec(c, geo, s) |
+| Decode 需要 X_input | 否 | **是**（用於 FK 和殘差基準） |
+| Config 選擇 | `model.model_type = "default"` | `model.model_type = "geo"` |
+
 **Gripper 設計決策**：
 - Robot 與 human demo 的 gripper commands **完全相同**（humanization 只改 joint 姿態）
 - Encoder 將 gripper 視為**上下文**（contextual input），而非 style-dependent 信號
@@ -199,15 +234,20 @@ Style s 表示: Learned Embedding（style_dim=32，可學習）
 | 元件 | 檔案 | 說明 |
 |------|------|------|
 | SCAE 主模型 | `scae/scae.py` | Encoder + Decoder + Style Embedding 組裝 |
+| GeoSCAE 主模型 | `scae/scae_geo.py` | Encoder + FiLMGeoDecoder + FK + 殘差預測 |
 | BiGRU / CNN Encoder | `scae/encoder.py` | 兩種 encoder 實作 + `build_encoder` 工廠函式 |
 | FiLM Decoder | `scae/decoder.py` | FiLMLayer → FiLMConv1dBlock → FiLMDecoder |
+| GeoMLP + FiLMGeoDecoder | `scae/decoder_geo.py` | 幾何條件化殘差 Decoder |
 | Loss 函數 | `scae/losses.py` | 7 項 loss 的計算邏輯 |
 | Config | `scae/config.py` | DataConfig / ModelConfig / LossConfig / TrainingConfig |
-| 可微分 FK | `scae/panda_fk.py` | Panda 7-DOF DH FK，含 TCP + Elbow pos |
+| 可微分 FK | `scae/panda_fk.py` | Panda 7-DOF DH FK，含 TCP + Elbow + Shoulder + Wrist |
 | Dataset | `scae/dataset.py` | Paired action chunk 載入 + 正規化 |
 | 訓練腳本 | `train.py` | Phase 1 完整訓練流程 |
 | 評估腳本 | `evaluate.py` | Sanity check + 可視化 |
 | 預設設定 | `configs/default.yaml` | 所有超參數預設值 |
+| LIBERO Pipeline 入口 | `LIBERO/scripts/A_humanized_libero_suite.py` | 整套 suite 的 SCAE humanize 調度 |
+| LIBERO-10 並行腳本 | `LIBERO/scripts/A_humanized_libero_10.py` | 平行 SCAE 轉換，per-worker 模型快取 |
+| 單 demo Pipeline | `LIBERO/scripts/A_run_pipeline.py` | 單一 demo 的 SCAE 轉換步驟 |
 
 ### Loss 函數
 
@@ -261,6 +301,77 @@ x_hat_h2r = model.decode(c_human, s=0)    # Dec(c_h, s_r) → 應 ≈ x_robot
 
 # 4. 計算 7 項 loss → backward → optimizer.step()
 ```
+
+> **GeoSCAE 訓練差異**：decode 呼叫需傳入 `x_input` 作為殘差基準與 FK 輸入。
+> ```python
+> # GeoSCAE decode：
+> x_hat_robot = model.decode(c_robot, s=0, x_input=x_robot)
+> x_hat_r2h   = model.decode(c_robot, s=1, x_input=x_robot)
+> ```
+
+### SCAE → LIBERO Pipeline 整合（Sliding-Window Inference）
+
+訓練完成後，需將 SCAE 模型套用於 LIBERO demo 資料以生成 humanized 動作軌跡。
+此步驟已整合進 LIBERO pipeline，透過 `--method scae` 旗標觸發。
+
+#### CLI 使用方式
+
+```bash
+# 整套 suite（例如 LIBERO_90）
+python A_humanized_libero_suite.py \
+    --method scae \
+    --scae_checkpoint /path/to/best_model.pt \
+    --scae_config /path/to/config.yaml
+
+# 單一 demo
+python A_run_pipeline.py --method scae \
+    --scae_checkpoint /path/to/best_model.pt \
+    --scae_config /path/to/config.yaml \
+    --steps scae
+```
+
+#### Sliding-Window 推理流程
+
+```
+輸入: demo 完整軌跡 τ ∈ R^(T×7) (joints only)
+chunk_len = 8 (來自 config)，stride = 1
+
+1. 正規化: τ_norm = normalize(τ)  // Panda joint limits → [-1, 1]
+2. Pad: 前後各加 chunk_len-1 個 padding（replicate 邊界值）
+3. 展開 sliding windows:
+   W = {τ_norm[i : i+chunk_len] for i=0..T-1}  → R^(T × 8 × 7)
+4. 拼接 gripper: W_full = concat(W, gripper_chunks) → R^(T × 8 × 8)
+5. Batched encode + decode:
+   c = model.encode(W_full)               # (T, 8, D_c)
+   標準 SCAE: τ̂ = model.decode(c, s=1)   # target style = human
+   GeoSCAE:  τ̂ = model.decode(c, s=1, x_input=W_full)  # 需 x_input
+6. Hann Window 合併重疊區域:
+   每個 window 產出 8 步預測，stride=1 → 大量重疊
+   使用 Hann window 加權 → 平滑過渡，消除邊界不連續
+   output[t] = Σ_w hann[w] * τ̂[w][t] / Σ_w hann[w]
+7. 反正規化: τ_human = denormalize(output)
+8. 儲存: humanized.npz → {joint_states_human, gripper_commands_human, ...}
+```
+
+#### GeoSCAE 偵測機制
+
+```python
+# 由 config 自動偵測模型類型
+model_type = getattr(cfg.model, "model_type", "default")
+if model_type == "geo":
+    from scae.scae_geo import GeoSCAE
+    model = GeoSCAE(cfg)
+else:
+    from scae.scae import SCAE
+    model = SCAE(cfg)
+```
+
+#### 技術細節
+
+- **CPU-only（並行模式）**：`A_humanized_libero_10.py` 使用 `ProcessPoolExecutor`（30 workers），fork 後 CUDA 不安全，因此 SCAE 模型強制在 CPU。每個 worker 有 `_scae_cache` dict 做 lazy loading。
+- **CUDA（單一模式）**：`A_run_pipeline.py` 單 demo 模式支援 CUDA。
+- **輸出目錄命名**：`{suite}_humanized_scae/`（非 `{suite}_humanized/`），避免覆蓋既有 preprocess+project 結果。
+- **繞過 preprocess**：`method=scae` 時直接從原始 demo → SCAE → humanized.npz，不需要 preprocess 與 project 步驟。
 
 ### Phase 1 驗證（Phase 2 之前必做，見 `evaluate.py`）
 
