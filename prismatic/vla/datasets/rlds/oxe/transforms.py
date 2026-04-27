@@ -946,15 +946,10 @@ OXE_STANDARDIZATION_TRANSFORMS = {
     "libero_goal_joint_no_noops": libero_joint_pos_dataset_transform,
     ### LIBERO humanized datasets (absolute joint position actions)
     "libero_10_humanized_no_noops": libero_joint_pos_dataset_transform,
-    "libero_10_humanized": libero_joint_pos_dataset_transform,
     "libero_spatial_humanized_no_noops": libero_joint_pos_dataset_transform,
-    "libero_spatial_humanized": libero_joint_pos_dataset_transform,
     "libero_object_humanized_no_noops": libero_joint_pos_dataset_transform,
-    "libero_object_humanized": libero_joint_pos_dataset_transform,
     "libero_goal_humanized_no_noops": libero_joint_pos_dataset_transform,
-    "libero_goal_humanized": libero_joint_pos_dataset_transform,
     "libero_4_task_suites_humanized_no_noops": libero_joint_pos_dataset_transform,
-    "libero_4_task_suites_humanized": libero_joint_pos_dataset_transform,
     ### ALOHA fine-tuning datasets
     "aloha1_fold_shorts_20_demos": aloha_dataset_transform,
     "aloha1_fold_shirt_30_demos": aloha_dataset_transform,

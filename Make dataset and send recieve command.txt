@@ -1,3 +1,26 @@
+重建 HDF5 + RLDS: scripts/rebuild_libero_rlds_from_npz.sh
+bash /home/vsp1323/alex/openvla-oft_human/scripts/rebuild_libero_rlds_from_npz.sh humanized libero_10
+bash /home/vsp1323/alex/openvla-oft_human/scripts/rebuild_libero_rlds_from_npz.sh original-joint libero_10
+
+original joint:
+bash /home/vsp1323/alex/openvla-oft_human/scripts/rebuild_libero_rlds_from_npz.sh original-joint libero_10
+bash /home/vsp1323/alex/openvla-oft_human/scripts/rebuild_libero_rlds_from_npz.sh original-joint libero_spatial
+bash /home/vsp1323/alex/openvla-oft_human/scripts/rebuild_libero_rlds_from_npz.sh original-joint libero_goal
+bash /home/vsp1323/alex/openvla-oft_human/scripts/rebuild_libero_rlds_from_npz.sh original-joint libero_object
+
+--dataset_name libero_4_task_suites_joint_no_noops
+
+humanized:
+bash /home/vsp1323/alex/openvla-oft_human/scripts/rebuild_libero_rlds_from_npz.sh humanized libero_10
+bash /home/vsp1323/alex/openvla-oft_human/scripts/rebuild_libero_rlds_from_npz.sh humanized libero_spatial
+bash /home/vsp1323/alex/openvla-oft_human/scripts/rebuild_libero_rlds_from_npz.sh humanized libero_goal
+bash /home/vsp1323/alex/openvla-oft_human/scripts/rebuild_libero_rlds_from_npz.sh humanized libero_object
+
+
+直接重訓: scripts/finetune_libero_from_rlds.sh
+# bash /home/vsp1323/alex/openvla-oft_human/scripts/finetune_libero_from_rlds.sh humanized libero_goal
+# bash /home/vsp1323/alex/openvla-oft_human/scripts/finetune_libero_from_rlds.sh original-joint libero_object
+
 1.
 cd /home/vsp1323/alex/openvla-oft_human
 python experiments/robot/libero/A_npz_to_hdf5.py \
@@ -35,24 +58,59 @@ or
 CUDA_VISIBLE_DEVICES="" tfds build --overwrite
 
 # Step 2: auto-copy (always the same, paste as-is)
-NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1) && DSNAME=$(basename $(dirname "$NEWEST")) && DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/${DSNAME}_no_noops/1.0.0 && mkdir -p "$DEST" && cp -r "$NEWEST"/* "$DEST"/ && echo "Copied → $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
+NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1)
+DSNAME=$(basename $(dirname "$NEWEST"))
+# DSNAME will be "libero10_joint" — rename to "libero_10_joint_no_noops"
+DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_joint_no_noops/1.0.0
+mkdir -p "$DEST"
+cp -r "$NEWEST"/* "$DEST"/
+echo "Copied → $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 
-
-rsync -rlptDvz --progress --no-g -e "ssh -p 304" \
+Send dataset from local to VCP:
+Send original joint libero_10:
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
 /home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_joint_no_noops \
 vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
 
-rsync -rlptDvz --progress --no-g -e "ssh -p 31427" \
+Send humanized  libero_10:
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
 /home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_humanized_no_noops \
 vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
 
 
-rsync -rlptDvz --progress --no-g -e "ssh -p 304" \
-vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs \
-/home/vsp1323/alex/openvla-oft_human/
+Send runs checkpoint from VCP to local:
+mkdir -p /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10
 
-  
-  
+(original joint libero 10)
+rsync -rlptDvz --progress --no-g -e "ssh -p 32492" \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/ \
+/home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/
+
+Send runs checkpoint from VCP to local with only checkpoints:
+(humanized libero 10)
+rsync -rlptDvz --progress --no-g -e "ssh -p 32492" \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--10000_chkpt \
+/home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/
+
+Send runs checkpoint from VCP to local with update
+(humanized libero 10)
+rsync -rlptDvz --progress --no-g -e "ssh -p 32492" \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/ \
+/home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/
+
+Send runs checkpoint from local to vcp with only checkpoints:
+(Original joint libero 10)
+mkdir -p ~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_joint_libero_10
+
+rsync -rlptDvz --progress --no-g -e "ssh -p 32492" /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/openvla-7b+libero_10_joint_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--19000_chkpt vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/
+
+
+Send runs checkpoint from local to vcp with only checkpoints:
+(Humanized libero 10)
+mkdir -p ~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10
+
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--10000_chkpt vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/
+
 To avoid this in the future: use pkill -P <pid> to kill a process and all its children, or launch batch scripts with setsid so Ctrl+C propagates to the entire process group. You can also use kill -- -<pgid> to kill a whole process group
 
 ps -eo pid,args | grep -E 'A_run_batch_demo|A_run_pipeline|A_preprocess_human_demo' | grep -v grep | awk '{print $1}' | xargs kill -9 2>/dev/null; echo "Killed all lerobot preprocessing processes"

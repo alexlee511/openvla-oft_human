@@ -220,6 +220,30 @@ OXE_NAMED_MIXTURES: Dict[str, List[Tuple[str, float]]] = {
     "libero_goal_joint_no_noops": [
         ("libero_goal_joint_no_noops", 1.0),
     ],
+    "libero_4_task_suites_joint_no_noops": [
+        ("libero_spatial_joint_no_noops", 1.0),
+        ("libero_object_joint_no_noops", 1.0),
+        ("libero_goal_joint_no_noops", 1.0),
+        ("libero_10_joint_no_noops", 1.0),
+    ],
+    "libero_10_humanized_no_noops": [
+        ("libero_10_humanized_no_noops", 1.0),
+    ],
+    "libero_object_humanized_no_noops": [
+        ("libero_object_humanized_no_noops", 1.0),
+    ],
+    "libero_spatial_humanized_no_noops": [
+        ("libero_spatial_humanized_no_noops", 1.0),
+    ],
+    "libero_goal_humanized_no_noops": [
+        ("libero_goal_humanized_no_noops", 1.0),
+    ],
+    "libero_4_task_suites_humanized_no_noops": [
+        ("libero_spatial_humanized_no_noops", 1.0),
+        ("libero_object_humanized_no_noops", 1.0),
+        ("libero_goal_humanized_no_noops", 1.0),
+        ("libero_10_humanized_no_noops", 1.0),
+    ],
     "libero_4_task_suites_no_noops": [
         ("libero_spatial_no_noops", 1.0),
         ("libero_object_no_noops", 1.0),

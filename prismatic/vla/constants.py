@@ -40,6 +40,14 @@ LIBERO_HUMANIZED_CONSTANTS = {
     "ACTION_PROPRIO_NORMALIZATION_TYPE": NormalizationType.BOUNDS_Q99,
 }
 
+# OFT LIBERO no-noops: 7D EEF delta actions, 25-step action chunks
+LIBERO_NO_NOOPS_25_CONSTANTS = {
+    "NUM_ACTIONS_CHUNK": 25,
+    "ACTION_DIM": 7,            # EEF delta (dx, dy, dz, drx, dry, drz, gripper)
+    "PROPRIO_DIM": 8,           # EEF pos (3) + EEF ori (3) + gripper (2)
+    "ACTION_PROPRIO_NORMALIZATION_TYPE": NormalizationType.BOUNDS_Q99,
+}
+
 ALOHA_CONSTANTS = {
     "NUM_ACTIONS_CHUNK": 25,
     "ACTION_DIM": 14,
@@ -60,6 +68,12 @@ def detect_robot_platform():
     cmd_args = " ".join(sys.argv).lower()
 
     if "libero" in cmd_args:
+        # OFT non-joint checkpoints encode this pattern in their model path/name.
+        # Check before the generic LIBERO modes so 25-step no-noops gets the
+        # correct action/proprio dimensions.
+        if "_no_noops" in cmd_args and "25_acts_chunk" in cmd_args:
+            return "LIBERO_NO_NOOPS_25"
+
         # Distinguish humanized/joint (joint pos) vs original (EEF delta) LIBERO
         # Trigger humanized (joint pos) mode when:
         #   1. "--use_joint_pos true" flag is explicitly set, OR
@@ -83,6 +97,8 @@ ROBOT_PLATFORM = detect_robot_platform()
 # Set the appropriate constants based on the detected platform
 if ROBOT_PLATFORM == "LIBERO_HUMANIZED":
     constants = LIBERO_HUMANIZED_CONSTANTS
+elif ROBOT_PLATFORM == "LIBERO_NO_NOOPS_25":
+    constants = LIBERO_NO_NOOPS_25_CONSTANTS
 elif ROBOT_PLATFORM == "LIBERO_ORIGINAL":
     constants = LIBERO_ORIGINAL_CONSTANTS
 elif ROBOT_PLATFORM == "ALOHA":

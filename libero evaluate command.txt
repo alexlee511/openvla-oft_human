@@ -1,17 +1,79 @@
+Generate the stored humanized initial poses for that suite.
+Run eval on that suite.
+
+python experiments/robot/libero/A_generate_humanized_initial_poses.py
+
+python experiments/robot/libero/A_generate_humanized_initial_poses.py \
+  --suite_name libero_spatial libero_object libero_goal libero_10
+  
+python experiments/robot/libero/A_generate_humanized_initial_poses.py --suite_name libero_spatial
+python experiments/robot/libero/A_generate_humanized_initial_poses.py --suite_name libero_object
+python experiments/robot/libero/A_generate_humanized_initial_poses.py --suite_name libero_goal
+python experiments/robot/libero/A_generate_humanized_initial_poses.py --suite_name libero_10
+
+
+
+EVAL humanized libero_10:
+
 python experiments/robot/libero/run_libero_eval.py \
-  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--10000_chkpt \
+  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
   --task_suite_name libero_10 \
   --use_l1_regression true \
   --use_proprio true \
+  --use_joint_pos true \
+  --use_humanized_initial_pose true \
   --num_images_in_input 2 \
   --center_crop true \
-  --num_trials_per_task 50 \
+  --num_open_loop_steps 8 \
+  --num_trials_per_task 10 \
+  --joint_substeps 1 \
   --use_wandb true \
   --wandb_entity alexlee511-national-taipei-university-of-technology \
   --wandb_project openvla-oft_human
   
+  if you want substepping on, use for example:
+--joint_substeps 2
+and understand the code will actually run with 25.
+if change outer kp
+--joint_Kp_overshoot 3.5
+
+
 python experiments/robot/libero/run_libero_eval.py \
-  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/openvla-7b+libero_10_joint_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
+  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
+  --task_suite_name libero_10 \
+  --use_l1_regression true \
+  --use_proprio true \
+  --use_joint_pos true \
+  --num_images_in_input 2 \
+  --center_crop true \
+  --num_trials_per_task 10 \
+  --joint_substeps 20 \
+  --num_open_loop_steps 8 \
+  --use_wandb true \
+  --wandb_entity alexlee511-national-taipei-university-of-technology \
+  --wandb_project openvla-oft_human
+  
+  
+EVAL original joint libero_10:
+
+python experiments/robot/libero/run_libero_eval.py \
+  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/openvla-7b+libero_10_joint_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
+  --task_suite_name libero_10 \
+  --use_l1_regression true \
+  --use_proprio true \
+  --use_joint_pos true \
+  --num_images_in_input 2 \
+  --center_crop true \
+  --num_open_loop_steps 8 \
+  --num_trials_per_task 50 \
+  --joint_substeps 1 \
+  --use_wandb true \
+  --wandb_entity alexlee511-national-taipei-university-of-technology \
+  --wandb_project openvla-oft
+  
+  
+python experiments/robot/libero/run_libero_eval.py \
+  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/openvla-7b+libero_10_joint_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
   --task_suite_name libero_10 \
   --use_l1_regression true \
   --use_proprio true \
@@ -23,37 +85,26 @@ python experiments/robot/libero/run_libero_eval.py \
   --wandb_entity alexlee511-national-taipei-university-of-technology \
   --wandb_project openvla-oft
   
+
+EVAL original EEF libero_10:
+
 python experiments/robot/libero/run_libero_eval.py \
-  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
+  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_libero_10/openvla-7b+libero_10_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--25_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--10000_chkpt \
   --task_suite_name libero_10 \
   --use_l1_regression true \
   --use_proprio true \
-  --use_joint_pos true \
+  --use_joint_pos false \
   --num_images_in_input 2 \
   --center_crop true \
-  --num_trials_per_task 50 \
-  --joint_substeps 20 \
-  --num_open_loop_steps 8 \
+  --num_open_loop_steps 25 \
+  --num_trials_per_task 5 \
   --use_wandb true \
   --wandb_entity alexlee511-national-taipei-university-of-technology \
-  --wandb_project openvla-oft_human
-  
-  
-python experiments/robot/libero/run_libero_eval.py \
-  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/openvla-7b+libero_10_joint_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
-  --task_suite_name libero_10 \
-  --use_l1_regression true \
-  --use_proprio true \
-  --use_joint_pos true \
-  --num_images_in_input 2 \
-  --center_crop true \
-  --num_trials_per_task 10 \
-  --use_wandb true \
-  --wandb_entity alexlee511-national-taipei-university-of-technology \
-  --wandb_project openvla-oft \
-  --num_open_loop_steps 8 \
-  --joint_substeps 2
-  
+  --wandb_project openvla-oft
+   
+
+
+
 # For each .npz in the rollout_data directory:
 python /home/vsp1323/alex/LIBERO/scripts/A_human_likeness_evaluate.py \
   --rollout_npz <path_to_episode_npz> \

@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 import draccus
+import mujoco
 import numpy as np
 import tqdm
 from libero.libero import benchmark
@@ -34,6 +35,7 @@ from experiments.robot.libero.libero_utils import (
     save_rollout_data,
     save_rollout_video,
 )
+from experiments.robot.libero.A_humanized_initial_poses import get_humanized_initial_arm_joint_pose
 from experiments.robot.openvla_utils import (
     get_action_head,
     get_noisy_action_projector,
@@ -131,6 +133,7 @@ class GenerateConfig:
     num_trials_per_task: int = 50                    # Number of rollouts per task
     initial_states_path: str = "DEFAULT"             # "DEFAULT", or path to initial states JSON file
     env_img_res: int = 512                           # Resolution for environment images (higher=better video, min 256)
+    use_humanized_initial_pose: bool = False         # Force-enable stored humanized first-frame joints; otherwise auto-enable for humanized joint runs
 
     #################################################################################################################
     # Utils
@@ -274,6 +277,71 @@ def load_initial_states(cfg: GenerateConfig, task_suite, task_id: int, log_file=
     else:
         log_message("Using default initial states", log_file)
         return initial_states, None
+
+
+def get_task_demo_stem(task) -> str:
+    """Return the LIBERO task stem used by demo folders/files."""
+    return Path(task.bddl_file).stem
+
+
+def should_use_humanized_initial_pose(cfg: GenerateConfig) -> bool:
+    """Use stored humanized start pose only for humanized joint-control eval runs."""
+    checkpoint_text = str(cfg.pretrained_checkpoint).lower()
+    unnorm_text = str(cfg.unnorm_key).lower()
+    is_humanized_run = "humanized" in checkpoint_text or "humanized" in unnorm_text
+    return cfg.use_joint_pos and (cfg.use_humanized_initial_pose or is_humanized_run)
+
+
+def load_humanized_initial_joint_pose(cfg: GenerateConfig, task, episode_idx: int, log_file=None) -> Optional[np.ndarray]:
+    """Load stored q_human[0] for this task/demo when humanized init is enabled."""
+    if not should_use_humanized_initial_pose(cfg):
+        return None
+
+    task_stem = get_task_demo_stem(task)
+    q0 = get_humanized_initial_arm_joint_pose(cfg.task_suite_name, task_stem, episode_idx)
+    if q0 is not None:
+        log_message(f"Loaded stored humanized initial pose for task={task_stem} demo_{episode_idx:02d}", log_file)
+        return q0
+
+    log_message(f"Stored humanized initial pose missing for task={task_stem} demo_{episode_idx:02d}", log_file)
+    return None
+
+
+def apply_initial_arm_joint_pose(env, joint_qpos: np.ndarray):
+    """Overwrite only the arm joint qpos in the current sim state."""
+    base_env = env.env
+    sim = base_env.sim
+    model = sim.model
+    data = sim.data
+    if hasattr(model, "_model"):
+        model = model._model
+    if hasattr(data, "_data"):
+        data = data._data
+
+    joint_names = [f"robot0_joint{i}" for i in range(1, 8)]
+    for index, joint_name in enumerate(joint_names):
+        if hasattr(model, "get_joint_qpos_addr"):
+            qpos_addr = model.get_joint_qpos_addr(joint_name)
+            if isinstance(qpos_addr, tuple):
+                qpos_addr = qpos_addr[0]
+        else:
+            joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+            qpos_addr = model.jnt_qposadr[joint_id]
+        data.qpos[int(qpos_addr)] = float(joint_qpos[index])
+
+    data.qvel[:] = 0.0
+    sim.forward()
+
+
+def refresh_env_observation(env):
+    """Refresh observations after direct simulator state edits."""
+    if hasattr(env, "get_observation"):
+        return env.get_observation()
+    if hasattr(env, "_get_observations"):
+        return env._get_observations()
+    if hasattr(env, "env") and hasattr(env.env, "_get_observations"):
+        return env.env._get_observations()
+    raise AttributeError(f"Environment {type(env)} does not expose an observation refresh method")
 
 
 def prepare_observation(obs, resize_size, use_joint_pos=False):
@@ -828,6 +896,7 @@ def run_episode(
     proprio_projector=None,
     noisy_action_projector=None,
     initial_state=None,
+    initial_joint_pose=None,
     log_file=None,
 ):
     """Run a single episode in the environment."""
@@ -852,7 +921,11 @@ def run_episode(
     if initial_state is not None:
         obs = env.set_init_state(initial_state)
     else:
-        obs = env.get_observation()
+        obs = refresh_env_observation(env)
+
+    if initial_joint_pose is not None:
+        apply_initial_arm_joint_pose(env, initial_joint_pose)
+        obs = refresh_env_observation(env)
 
     # --- JOINT_POSITION: patch controller output_max & kp for fast tracking ---
     # Parameters matched to A_libero_joint_replay.py:
@@ -1132,6 +1205,8 @@ def run_task(
 
         log_message(f"Starting episode {task_episodes + 1}...", log_file)
 
+        initial_joint_pose = load_humanized_initial_joint_pose(cfg, task, episode_idx, log_file)
+
         # Run episode
         success, replay_images, frontview_images, rollout_data, episode_record = run_episode(
             cfg,
@@ -1144,6 +1219,7 @@ def run_task(
             proprio_projector,
             noisy_action_projector,
             initial_state,
+            initial_joint_pose,
             log_file,
         )
 

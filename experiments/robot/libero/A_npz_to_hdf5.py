@@ -81,6 +81,32 @@ def is_noop(action, prev_action=None, threshold=1e-4):
     return np.linalg.norm(action[:-1]) < threshold and gripper_action == prev_gripper_action
 
 
+def derive_next_joint_target_actions(actions, joint_states):
+    """Rebuild joint-position actions from observed joint states.
+
+    The NPZ files may store the joint part of `actions[t]` as the current
+    observed joint state `joint_states[t]`. For JOINT_POSITION behavior
+    cloning, the correct supervision is the next target state:
+
+      action[t, :7] = joint_states[t + 1]   for t < T - 1
+      action[T-1, :7] = joint_states[T - 1]
+
+    The gripper command is preserved from the original action array.
+    """
+    if actions.shape[0] != joint_states.shape[0]:
+        raise ValueError(
+            f"actions and joint_states must have same length, got {actions.shape[0]} and {joint_states.shape[0]}"
+        )
+
+    rebuilt = np.array(actions, dtype=np.float32, copy=True)
+    if rebuilt.shape[0] == 0:
+        return rebuilt
+
+    rebuilt[:-1, :7] = joint_states[1:]
+    rebuilt[-1, :7] = joint_states[-1]
+    return rebuilt
+
+
 # =====================================================================
 # Data discovery
 # =====================================================================
@@ -199,6 +225,7 @@ def process_task(task_name, task_root, output_dir, filter_noops, require_success
         eye_in_hand_rgb = sim_data["eye_in_hand_rgb"]              # (T, 256, 256, 3) uint8
         joint_states = sim_data["joint_states_obs"].astype(np.float32)  # (T, 7)
         gripper_states = sim_data["gripper_qpos"].astype(np.float32)    # (T, 2)
+        actions = derive_next_joint_target_actions(actions, joint_states)
         # Proprioceptive state: [joint_pos(7), gripper_width(1)] = 8D
         if "proprio_state" in sim_data:
             proprio_state = sim_data["proprio_state"].astype(np.float32)  # (T, 8)

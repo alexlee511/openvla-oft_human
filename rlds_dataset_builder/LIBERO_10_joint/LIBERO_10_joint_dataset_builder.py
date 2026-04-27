@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import sys
-from LIBERO_10_joint.conversion_utils import MultiThreadedDatasetBuilder
+from conversion_utils import MultiThreadedDatasetBuilder
 
 
 def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
@@ -160,5 +160,5 @@ class Libero10Joint(MultiThreadedDatasetBuilder):
     def _split_paths(self):
         """Define filepaths for data splits."""
         return {
-            "train": glob.glob("/home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_10_joint_noops/*.hdf5"),
+            "train": glob.glob("/home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_10_joint_no_noops/*.hdf5"),
         }

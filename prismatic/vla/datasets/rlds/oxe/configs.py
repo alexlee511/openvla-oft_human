@@ -707,21 +707,7 @@ OXE_DATASET_CONFIGS = {
         "action_encoding": ActionEncoding.JOINT_POS,
     },
     # === Humanized LIBERO datasets (absolute joint position actions) ===
-    "libero_10_humanized": {
-        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
-        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
-        "state_obs_keys": ["joint_state", "gripper_state"],
-        "state_encoding": StateEncoding.JOINT,
-        "action_encoding": ActionEncoding.JOINT_POS,
-    },
     "libero_10_humanized_no_noops": {
-        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
-        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
-        "state_obs_keys": ["joint_state", "gripper_state"],
-        "state_encoding": StateEncoding.JOINT,
-        "action_encoding": ActionEncoding.JOINT_POS,
-    },
-    "libero_goal_humanized": {
         "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
         "state_obs_keys": ["joint_state", "gripper_state"],
@@ -735,13 +721,6 @@ OXE_DATASET_CONFIGS = {
         "state_encoding": StateEncoding.JOINT,
         "action_encoding": ActionEncoding.JOINT_POS,
     },
-    "libero_spatial_humanized": {
-        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
-        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
-        "state_obs_keys": ["joint_state", "gripper_state"],
-        "state_encoding": StateEncoding.JOINT,
-        "action_encoding": ActionEncoding.JOINT_POS,
-    },
     "libero_spatial_humanized_no_noops": {
         "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
@@ -749,21 +728,7 @@ OXE_DATASET_CONFIGS = {
         "state_encoding": StateEncoding.JOINT,
         "action_encoding": ActionEncoding.JOINT_POS,
     },
-    "libero_object_humanized": {
-        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
-        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
-        "state_obs_keys": ["joint_state", "gripper_state"],
-        "state_encoding": StateEncoding.JOINT,
-        "action_encoding": ActionEncoding.JOINT_POS,
-    },
     "libero_object_humanized_no_noops": {
-        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
-        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
-        "state_obs_keys": ["joint_state", "gripper_state"],
-        "state_encoding": StateEncoding.JOINT,
-        "action_encoding": ActionEncoding.JOINT_POS,
-    },
-    "libero_4_task_suites_humanized": {
         "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
         "state_obs_keys": ["joint_state", "gripper_state"],

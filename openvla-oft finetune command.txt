@@ -4,6 +4,33 @@ python vla-scripts/patch_dtype.py --to float16
 # To revert back for A100/H100:
 python vla-scripts/patch_dtype.py --to bfloat16
 
+Original libero_10:
+torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
+  --vla_path openvla/openvla-7b \
+  --data_root_dir /nfs/Workspace/Alex/openvla-oft_human/modified_libero_rlds \
+  --dataset_name libero_10_no_noops \
+  --run_root_dir /nfs/Workspace/Alex/openvla-oft_human/runs/openvla-oft_libero_10 \
+  --use_l1_regression True \
+  --use_diffusion False \
+  --use_film False \
+  --num_images_in_input 2 \
+  --use_proprio True \
+  --batch_size 8 \
+  --grad_accumulation_steps 8 \
+  --learning_rate 5e-4 \
+  --num_steps_before_decay 15000 \
+  --max_steps 20000 \
+  --save_freq 2500 \
+  --save_latest_checkpoint_only False \
+  --image_aug True \
+  --lora_rank 32 \
+  --wandb_entity alexlee511-national-taipei-university-of-technology \
+  --wandb_project openvla-oft \
+  --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state
+ALL:
+--dataset_name libero_4_task_suite_no_noops
+
+Original joint libero_10:
 torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
   --vla_path openvla/openvla-7b \
   --data_root_dir /nfs/Workspace/Alex/openvla-oft_human/modified_libero_rlds \
@@ -19,14 +46,17 @@ torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
   --learning_rate 5e-4 \
   --num_steps_before_decay 15000 \
   --max_steps 20000 \
-  --save_freq 10000 \
+  --save_freq 2500 \
   --save_latest_checkpoint_only False \
   --image_aug True \
   --lora_rank 32 \
   --wandb_entity alexlee511-national-taipei-university-of-technology \
   --wandb_project openvla-oft \
   --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state
+ALL:
+--dataset_name libero_4_task_suites_joint_no_noops
 
+Humanized:
 torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
   --vla_path openvla/openvla-7b \
   --data_root_dir /nfs/Workspace/Alex/openvla-oft_human/modified_libero_rlds \
@@ -49,11 +79,8 @@ torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
   --wandb_entity alexlee511-national-taipei-university-of-technology \
   --wandb_project openvla-oft_human \
   --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state
-  
-what will it affet if I use --save_latest_checkpoint_only True? --wandb_project openvla-oft should i create a new project called openvla-oft_human?
-i will change to --dataset_name libero_10_humanized_no_noops \ nad --run_root_dir /nfs/Workspace/Alex/openvla-oft_human/runs/openvla-oft_human_libero_10 \
-and since the original finetune for openvla-oft is to output action(eef), this time i'll want to output absolute joint angle, will i need to modify in the command or in the code? and if in the code, i think we already modified it?
-
+ALL:
+--dataset_name libero_4_task_suites_humanized_no_noops
 
 
 如果训练过程中异常中断，假设要恢复15000的ckpt用于继续训练或Eval，命令如下：
@@ -68,6 +95,129 @@ torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
   ...... \
   --resume True \
   --resume_step 15000\
+
+
+Resume:
+origina joint libero_10:
+torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
+  --vla_path runs/openvla-oft_joint_libero_10/openvla-7b+libero_10_joint_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--19000_chkpt \
+  --data_root_dir /nfs/Workspace/Alex/openvla-oft_human/modified_libero_rlds \
+  --dataset_name libero_10_joint_no_noops \
+  --run_root_dir /nfs/Workspace/Alex/openvla-oft_human/runs/openvla-oft_joint_libero_10 \
+  --use_l1_regression True \
+  --use_diffusion False \
+  --use_film False \
+  --num_images_in_input 2 \
+  --use_proprio True \
+  --batch_size 8 \
+  --grad_accumulation_steps 8 \
+  --learning_rate 5e-4 \
+  --num_steps_before_decay 15000 \
+  --max_steps 20000 \
+  --save_freq 1000 \
+  --save_latest_checkpoint_only False \
+  --image_aug True \
+  --lora_rank 32 \
+  --wandb_entity alexlee511-national-taipei-university-of-technology \
+  --wandb_project openvla-oft \
+  --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state \
+  --resume True \
+  --resume_step 19000
+  
+humanized libero_10
+torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
+  --vla_path runs/openvla-7b+libero_4_task_suites_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--15000_chkpt \
+  --data_root_dir /nfs/Workspace/Alex/openvla-oft_human/modified_libero_rlds \
+  --dataset_name libero_10_humanized_no_noops \
+  --run_root_dir /nfs/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10 \
+  --use_l1_regression True \
+  --use_diffusion False \
+  --use_film False \
+  --num_images_in_input 2 \
+  --use_proprio True \
+  --batch_size 8 \
+  --grad_accumulation_steps 8 \
+  --learning_rate 5e-4 \
+  --num_steps_before_decay 15000 \
+  --max_steps 20000 \
+  --save_freq 10000 \
+  --save_latest_checkpoint_only False \
+  --image_aug True \
+  --lora_rank 32 \
+  --wandb_entity alexlee511-national-taipei-university-of-technology \
+  --wandb_project openvla-oft_human \
+  --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state
+  --resume True \
+  --resume_step 15000\
+
+
+
+torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
+  --vla_path runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--3000_chkpt \
+  --data_root_dir /nfs/Workspace/Alex/openvla-oft_human/modified_libero_rlds \
+  --dataset_name libero_10_humanized_no_noops \
+  --run_root_dir /nfs/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10 \
+  --use_l1_regression True \
+  --use_diffusion False \
+  --use_film False \
+  --num_images_in_input 2 \
+  --use_proprio True \
+  --batch_size 8 \
+  --grad_accumulation_steps 8 \
+  --learning_rate 5e-4 \
+  --num_steps_before_decay 15000 \
+  --max_steps 20000 \
+  --save_freq 1000 \
+  --save_latest_checkpoint_only False \
+  --image_aug True \
+  --lora_rank 32 \
+  --wandb_entity alexlee511-national-taipei-university-of-technology \
+  --wandb_project openvla-oft_human \
+  --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state \
+  --resume True \
+  --resume_step 3000 
+  
+  
+  
+  
+V100 Humanized:
+torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
+  --vla_path openvla/openvla-7b \
+  --data_root_dir /nfs/Workspace/Alex/openvla-oft_human/modified_libero_rlds \
+  --dataset_name libero_10_joint_no_noops \
+  --run_root_dir /nfs/Workspace/Alex/openvla-oft_human/runs/openvla-oft_joint_libero_10 \
+  --use_l1_regression True \
+  --use_diffusion False \
+  --use_film False \
+  --num_images_in_input 2 \
+  --use_proprio True \
+  --batch_size 2 \
+  --grad_accumulation_steps 32 \
+  --learning_rate 5e-4 \
+  --num_steps_before_decay 15000 \
+  --max_steps 20000 \
+  --save_freq 10000 \
+  --save_latest_checkpoint_only False \
+  --merge_lora_during_training False \
+  --image_aug True \
+  --lora_rank 32 \
+  --wandb_entity alexlee511-national-taipei-university-of-technology \
+  --wandb_project openvla-oft \
+  --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state
+  
+  
+what will it affet if I use --save_latest_checkpoint_only True? --wandb_project openvla-oft should i create a new project called openvla-oft_human?
+i will change to --dataset_name libero_10_humanized_no_noops \ nad --run_root_dir /nfs/Workspace/Alex/openvla-oft_human/runs/openvla-oft_human_libero_10 \
+and since the original finetune for openvla-oft is to output action(eef), this time i'll want to output absolute joint angle, will i need to modify in the command or in the code? and if in the code, i think we already modified it?
+
+
+
+
+
+
+
+
+
 
 
 netdrive/Workspace/Alex/openvla-oft_human
