@@ -126,7 +126,7 @@ torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
   
 humanized libero_10
 torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
-  --vla_path runs/openvla-7b+libero_4_task_suites_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--15000_chkpt \
+  --vla_path runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--10000_chkpt \
   --data_root_dir /nfs/Workspace/Alex/openvla-oft_human/modified_libero_rlds \
   --dataset_name libero_10_humanized_no_noops \
   --run_root_dir /nfs/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10 \
@@ -140,15 +140,15 @@ torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
   --learning_rate 5e-4 \
   --num_steps_before_decay 15000 \
   --max_steps 20000 \
-  --save_freq 10000 \
+  --save_freq 5000 \
   --save_latest_checkpoint_only False \
   --image_aug True \
   --lora_rank 32 \
   --wandb_entity alexlee511-national-taipei-university-of-technology \
   --wandb_project openvla-oft_human \
-  --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state
+  --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state \
   --resume True \
-  --resume_step 15000\
+  --resume_step 10000
 
 
 

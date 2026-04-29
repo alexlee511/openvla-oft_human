@@ -40,7 +40,7 @@ proprio -> ProprioProjector（2層 MLP）-> 1 個 proprio token
 -> Llama-2 Transformer（LoRA）
 -> actions hidden states
 -> ActionHead（MLPResNet）
--> predicted action chunk (K=8, dim=8)
+-> predicted action chunk (K=8, dim=7 in original LIBERO mode)
 ```
 
 ### 重要常數（LIBERO 設定）
@@ -48,7 +48,7 @@ proprio -> ProprioProjector（2層 MLP）-> 1 個 proprio token
 ```python
 LIBERO_CONSTANTS = {
     "NUM_ACTIONS_CHUNK": 8,
-    "ACTION_DIM": 8,    # 7 joints + 1 gripper
+  "ACTION_DIM": 7,    # EEF delta (dx, dy, dz, drx, dry, drz, gripper)
     "PROPRIO_DIM": 8,
 }
 ```
@@ -91,6 +91,10 @@ $$
 - 時序平滑項（以上一幀解作為 prior）
 - 與原始 demonstration posture 的正則化距離
 
+從實作角度看，這一階段的核心求解器並不是學習模型，而是以 SLSQP 為主的 constrained optimization。以目前 `A_elbow_projector_25.py` 的設計而言，每一幀都會根據當前的 demo TCP target、關節上下界、前一幀 warm-start 與 `approach_blend` 對應的姿態約束強度，重新解一個受限非線性最佳化問題。換言之，這是一種 phase-adaptive optimization，而不是參數經資料訓練後直接前向推論的 dynamic learning。
+
+因此，若要在論文中描述本階段，較準確的說法應是：TH-IK 採用「phase-aware constrained optimization」進行任務保持的人類化，而非使用神經網路直接學習 humanization 映射。
+
 ### 1.4 Phase-aware preprocessing
 
 本階段之 phase detection 不應僅依賴尾段加權等純時間啟發式規則，而應以任務互動證據建立 manipulation-critical frames。較合理的訊號來源包括：
@@ -100,6 +104,8 @@ $$
 3. free-body object motion（平移/旋轉）
 4. 經時間平滑後得到連續 per-frame blend
 5. 輸出可供 Phase 2 使用的 frame-level labels
+
+其中 `A_preprocess_human_demo_17.py` 的角色，是利用 gripper transition、articulation state change、free-body object motion 等物理事件，建立連續的 `approach_blend` 與相關 phase labels。這些訊號本身不是學習得到的，而是由 simulation state 與任務互動證據推導出的 supervision / control signal。
 
 ### 1.5 產出資料格式
 
@@ -130,6 +136,12 @@ $$
 
 本階段目標為學習一個由原始 robot 軌跡到 humanized 軌跡的映射模型，即以神經網路近似 TH-IK 所實現的 phase-aware humanization 過程，降低傳統 projector 在部署時的運算成本，同時保留 task-relevant 幾何約束。
 
+若要從論文貢獻的角度濃縮，本階段的核心主張可表述為：
+
+1. humanization 不應是固定強度的姿態轉換，而應依任務階段動態調整 human-likeness；
+2. 這種調整不再由手工規則直接驅動，而是由可部署觀測訊號預測出的 phase signal 所調控；
+3. 模型學習的是「在不破壞 task completion 的前提下，於不同階段施加不同程度的人類化修正」。
+
 ### 2.2 參考實作
 
 - 專案根目錄：`/home/vsp1323/alex/TPHC`
@@ -153,6 +165,8 @@ $$
 - `blend`：phase conditioning（teacher signal 或 predictor 輸出）
 - `images`：Stage 2 / Stage 3 可選的視覺輸入（agentview + eye_in_hand）
 
+這裡的 `approach_blend` 不宜被簡化理解為一般的 smoothing coefficient，而更接近「task-criticality-conditioned humanization control signal」。當 `blend` 較高時，模型傾向保守地貼近原始 task-preserving posture；當 `blend` 較低時，模型允許較大的 human-like correction。也就是說，TPHC 實際上是在學習一個由 phase signal 調控的人類化強度分配機制。
+
 ### 2.4 三階段訓練流程
 
 1. **Stage 1（teacher-forced humanizer）**
@@ -169,6 +183,10 @@ $$
    - 以實際部署路徑進行 end-to-end 訓練：`q_raw + images -> blend_pred -> q_hum`
    - 融合 Stage 1 與 Stage 2 權重，以提升整體穩定性與可部署性
 
+從目前 `TPHC/tphc/models/tphc_net.py` 的實作來看，Stage 3 的關鍵不只是「有 vision」，而是模型會先由 `q_raw + gripper + geo_feats + images` 預測 `blend_pred`，再以該 phase signal 調控 residual humanization。故若要在論文中描述本方法，較精確的措辭應是「observation-conditioned phase-aware humanization」，而不是籠統地稱為 dynamic learning。
+
+若要進一步強調 contribution，可以寫成：TPHC 以可觀測之 motion-geometry-vision cues 自動估計 task phase，並依此動態控制 human-likeness level，以兼顧 human-like posture 與 task completeness。
+
 ### 2.5 訓練資料格式（重點）
 
 核心資料來自 Phase 1 humanized outputs：
@@ -177,7 +195,8 @@ $$
 - `approach_blend`
 - `gripper_commands_demo`
 - `artic_blend` / `obj_pos_blend`（Plan B1）
-- `humanized_sim.npz` 的雙視角影像（Stage 2/3）
+- `original_sim.npz` 的可部署觀測影像（Stage 2/3 predictor input）
+- `humanized_sim.npz` 可作為 GT replay 檢查與分析 sidecar，但不是 predictor 的主要輸入來源
 
 ### 2.6 主要損失項（示意）
 
@@ -187,6 +206,26 @@ $$
 - `L_elbow`：肘部幾何一致
 - `L_blend`：phase/blend prediction
 
+### 2.7 TH-IK 與 TPHC 的方法論差異
+
+這一節在論文中建議明確寫出，因為兩者雖然都會使用 `approach_blend`，但其本質完全不同。
+
+1. **TH-IK / SLSQP projector**
+  - 本質：逐幀 constrained optimization
+  - `approach_blend` 的作用：調整約束強度，特別是 EEF orientation constraint 的保留程度
+  - 依賴：顯式目標函數、物理/運動學約束、每幀數值求解
+  - 優點：可解釋、可直接保證 task-space constraint
+  - 代價：部署時計算成本較高，且規則設計與 solver 調參較繁瑣
+
+2. **TPHC**
+  - 本質：學習式 residual converter
+  - `approach_blend` 的作用：作為 phase-conditioned humanization gate / modulation signal
+  - 依賴：資料學習得到的映射、motion + geometry + visual observation
+  - 優點：部署時為單次前向推論，較易擴展至大規模資料生成
+  - 代價：需承受 train/inference mismatch、phase prediction error、distribution shift 等學習風險
+
+因此，若直接回答「SLSQP 是不是一種 dynamic learning」，答案是否定的。SLSQP 是一種數值最佳化方法；它可以隨每幀條件動態求解，但不屬於 data-driven learning。相對地，TPHC 才是學習式方法，且其動態性來自 observation-conditioned phase prediction 與 phase-aware modulation。
+
 ---
 
 ## Phase 3：TPHC 生成資料、OpenVLA-OFT 微調與多維評估
@@ -194,6 +233,8 @@ $$
 ### 3.1 研究目標
 
 本階段目標為利用 TPHC 批次生成人類化 demonstrations，並以此作為 supervision 微調 OpenVLA-OFT，使策略在維持任務成功率的同時，學得更接近 humanized motion distribution 的 action 與 proprio 表徵。
+
+若從 thesis story 的角度整合三個階段，本研究的主線可被描述為：先以 constrained optimization 建立高品質 task-preserving humanized supervision，再以 phase-aware neural converter 學會可部署的人類化轉換，最後將該 humanized motion distribution 注入 vision-language-action policy，驗證其對 task success 與 human likeness 的聯合影響。
 
 ### 3.2 目標資料集
 
@@ -338,6 +379,35 @@ $$
 4. 基於 humanized demos 微調 OpenVLA-OFT（含 action/proprio 對齊）
 5. 在四個 suite 統一評估 success rate + human likeness
 6. 針對失敗任務回查 phase labels / blend prediction 做誤差分析
+
+---
+
+## 論文定位與題目草案
+
+### 論文主貢獻的建議表述
+
+若要把 `approach_blend` 納入論文主貢獻，建議不要只說「dynamic human likeness」，而是更精確地寫成以下其中一種：
+
+1. task-phase-aware humanization
+2. observation-conditioned human-likeness modulation
+3. dynamic human-likeness control for task-preserving motion conversion
+
+其中第三種最接近你想表達的意思，但論文中最好再補一句：這個 dynamic control 並不是泛指任意時間變化，而是由可觀測的 phase evidence（motion、geometry、vision）所驅動，目的是在不同操作階段調整 humanization 強度，以維持 task completeness。
+
+### 題目草案
+
+以下題目相對貼近目前實作，也比較像論文標題語氣：
+
+1. Task-Phase-Aware Humanization of Robot Demonstrations for Vision-Language-Action Policy Adaptation
+2. Task-Preserving Humanized Conversion of Robot Demonstrations via Observation-Conditioned Human-Likeness Modulation
+3. From Constrained Humanization to Policy Adaptation: Learning Task-Preserving Humanized Robot Demonstrations for OpenVLA-OFT
+4. Learning Observation-Conditioned Humanized Robot Demonstrations with Dynamic Human-Likeness Control
+
+若你要把 OpenVLA-OFT 也放進標題，我會優先考慮第 1 或第 3。若你要把「動態控制 human-likeness」作為主要 novelty，我會優先考慮第 2。
+
+### 摘要草案
+
+本研究探討如何在不破壞任務完成性的前提下，將機器人示範軌跡轉換為更具人類動作特徵的操作軌跡，並進一步用於 vision-language-action policy 的微調。傳統 robot demonstrations 雖可有效完成 manipulation tasks，但其關節姿態與運動分佈通常缺乏人類操作的自然性，限制了 human-like motion 建模與後續策略學習的表徵品質。為此，本研究提出一個三階段框架。首先，我們以 task-preserving humanization pipeline 建立高品質 paired demonstrations，透過 phase-aware preprocessing 偵測 gripper transition、articulation change 與 object motion 等 manipulation-critical events，並結合受限最佳化的 TH-IK projector，在保留末端執行器 task-space 關鍵約束下生成人類化 joint trajectories。其次，我們提出 TPHC，一個 task-phase-aware 的殘差式神經轉換模型，用以近似傳統 projector 的人類化過程。TPHC 並非採用固定強度的人類化策略，而是根據 motion、geometry 與 visual observations 預測 phase-conditioned control signal，以動態調節 human-likeness level，使模型在 task-critical phases 保持較高的 task fidelity，在較自由的操作階段則施加較強的人類化修正。最後，我們將 TPHC 生成的人類化 demonstrations 用於 OpenVLA-OFT 微調，並對 action representation、proprioceptive pathway 與 rollout controller 進行 joint-control 對齊。實驗將於多個 LIBERO benchmark suites 上評估任務成功率與 human-likeness 指標，以驗證 observation-conditioned humanization 對 policy adaptation 的效益。 
 
 ---
 
