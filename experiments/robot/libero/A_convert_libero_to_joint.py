@@ -260,7 +260,7 @@ def convert_task(raw_hdf5_path, output_hdf5_path, filter_noops=True,
             joint_actions_out[-1, 7] = joint_actions[-1, 7]
 
             # Compute proprio from replay
-            gripper_width = np.mean(gripper_states, axis=1, keepdims=True).astype(np.float32)
+            gripper_width = np.sum(np.abs(gripper_states), axis=1, keepdims=True).astype(np.float32)
             proprio_state = np.concatenate([joint_states, gripper_width], axis=-1).astype(np.float32)
         else:
             # ---- No replay: use original observations (upscaled) ----
@@ -271,7 +271,7 @@ def convert_task(raw_hdf5_path, output_hdf5_path, filter_noops=True,
             ee_states = demo["obs"]["ee_states"][()] if "ee_states" in demo["obs"] else None
 
             joint_actions_out = joint_actions
-            gripper_width = np.mean(gripper_states, axis=1, keepdims=True).astype(np.float32)
+            gripper_width = np.sum(np.abs(gripper_states), axis=1, keepdims=True).astype(np.float32)
             proprio_state = np.concatenate([joint_states, gripper_width], axis=-1).astype(np.float32)
 
         # ---- Filter no-ops ----

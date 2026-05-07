@@ -34,15 +34,27 @@ import csv
 import glob
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
 
-# Add LIBERO scripts to path so we can import the evaluator functions
-LIBERO_SCRIPTS = os.path.join(os.path.dirname(__file__), "..", "..", "..", "LIBERO", "scripts")
-if not os.path.isdir(LIBERO_SCRIPTS):
-    # Try the user's known path
-    LIBERO_SCRIPTS = "/home/vsp1323/alex/LIBERO/scripts"
-sys.path.insert(0, LIBERO_SCRIPTS)
+# Add LIBERO scripts to path so we can import the evaluator functions.
+# Support both the vendored workspace copy and the sibling LIBERO repo.
+THIS_FILE = Path(__file__).resolve()
+LIBERO_SCRIPT_CANDIDATES = [
+    THIS_FILE.parents[3] / "LIBERO" / "scripts",
+    THIS_FILE.parents[4] / "LIBERO" / "scripts",
+    Path("/home/vsp1323/alex/LIBERO/scripts"),
+]
+
+for candidate in LIBERO_SCRIPT_CANDIDATES:
+    if (candidate / "A_human_likeness_evaluate.py").is_file():
+        sys.path.insert(0, str(candidate))
+        break
+else:
+    raise ModuleNotFoundError(
+        "Could not find A_human_likeness_evaluate.py in any known LIBERO/scripts location"
+    )
 
 from A_human_likeness_evaluate import (
     METRIC_KEYS,
@@ -52,6 +64,7 @@ from A_human_likeness_evaluate import (
     evaluate_trajectory,
     save_results,
 )
+from libero.libero.benchmark import get_benchmark
 
 # ─────────────────────────────────────────────────────────────────
 #  Helpers
@@ -113,6 +126,29 @@ def load_rollout_npz(npz_path):
     return js, task_name, success, success_step
 
 
+def resolve_task_name(task_name, suite_name, suite_task_names):
+    """Map rollout task labels to canonical benchmark task names."""
+    raw_name = str(task_name)
+    normalized_spaces = raw_name.replace("_", " ")
+
+    if raw_name in suite_task_names:
+        return raw_name
+
+    lower_map = {name.lower(): name for name in suite_task_names}
+    if normalized_spaces.lower() in lower_map:
+        return lower_map[normalized_spaces.lower()]
+
+    suffix_matches = [
+        name for name in suite_task_names if name.lower().endswith(raw_name.lower())
+    ]
+    if len(suffix_matches) == 1:
+        return suffix_matches[0]
+
+    raise ValueError(
+        f"Could not resolve rollout task '{task_name}' to a canonical task in suite '{suite_name}'"
+    )
+
+
 # ─────────────────────────────────────────────────────────────────
 #  Main
 # ─────────────────────────────────────────────────────────────────
@@ -145,6 +181,7 @@ def main():
     per_episode_dir = os.path.join(out_dir, "per_episode")
 
     dt = 1.0 / args.control_freq
+    suite_task_names = list(get_benchmark(args.suite)().get_task_names())
 
     # Cache built envs per task to avoid re-creating
     env_cache = {}
@@ -171,7 +208,19 @@ def main():
             continue
 
         T = js.shape[0]
-        print(f"  Task: {task_name}  T={T}  Success={success}")
+        try:
+            resolved_task_name = resolve_task_name(task_name, args.suite, suite_task_names)
+        except Exception as e:
+            print(f"  [SKIP] Failed to resolve task '{task_name}': {e}")
+            summary_rows.append({
+                "file": fname, "task": task_name, "success": success,
+                "T": T, "unified": float("nan"), "unified_noMJE": float("nan"),
+                **{f"m_{k}": float("nan") for k in METRIC_KEYS},
+                "error": str(e),
+            })
+            continue
+
+        print(f"  Task: {task_name} -> {resolved_task_name}  T={T}  Success={success}")
 
         if T < 4:
             print(f"  [SKIP] Too few timesteps ({T} < 4)")
@@ -184,10 +233,10 @@ def main():
             continue
 
         # Build or reuse env
-        if task_name not in env_cache:
+        if resolved_task_name not in env_cache:
             try:
-                env, model, data_sim, sid, eid, wid, qadrs = build_env(task_name, args.suite)
-                env_cache[task_name] = (env, model, data_sim, sid, eid, wid, qadrs)
+                env, model, data_sim, sid, eid, wid, qadrs = build_env(resolved_task_name, args.suite)
+                env_cache[resolved_task_name] = (env, model, data_sim, sid, eid, wid, qadrs)
             except Exception as e:
                 print(f"  [SKIP] Failed to build env for task '{task_name}': {e}")
                 summary_rows.append({
@@ -198,7 +247,7 @@ def main():
                 })
                 continue
 
-        env, model, data_sim, sid, eid, wid, qadrs = env_cache[task_name]
+        env, model, data_sim, sid, eid, wid, qadrs = env_cache[resolved_task_name]
 
         # Evaluate
         raw, norm, uni, uni_nm, diag = evaluate_trajectory(
@@ -270,8 +319,18 @@ def main():
         if n_valid > 0:
             avg_uni = np.mean([r["unified"] for r in valid_rows])
             avg_uni_nm = np.mean([r["unified_noMJE"] for r in valid_rows])
+            avg_sxu = np.mean([
+                (1.0 if r.get("success") is True else 0.0) * r["unified"]
+                for r in valid_rows
+            ])
+            avg_sxu_nm = np.mean([
+                (1.0 if r.get("success") is True else 0.0) * r["unified_noMJE"]
+                for r in valid_rows
+            ])
             f.write(f"  Avg Unified Score:      {avg_uni:.4f}\n")
             f.write(f"  Avg Unified (no MJE):   {avg_uni_nm:.4f}\n\n")
+            f.write(f"  SxU:                    {avg_sxu:.4f}\n")
+            f.write(f"  SxU_noMJE:              {avg_sxu_nm:.4f}\n\n")
 
             # Success-only averages
             success_rows = [r for r in valid_rows if r.get("success") is True]

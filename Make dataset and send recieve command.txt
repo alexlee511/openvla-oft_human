@@ -66,6 +66,7 @@ mkdir -p "$DEST"
 cp -r "$NEWEST"/* "$DEST"/
 echo "Copied → $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 
+
 Send dataset from local to VCP:
 Send original joint libero_10:
 rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
@@ -78,6 +79,13 @@ rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
 vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
 
 
+Send update original modified_libero_rlds:
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/ \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
+
+
+
 Send runs checkpoint from VCP to local:
 mkdir -p /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10
 
@@ -88,8 +96,8 @@ vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openv
 
 Send runs checkpoint from VCP to local with only checkpoints:
 (humanized libero 10)
-rsync -rlptDvz --progress --no-g -e "ssh -p 32492" \
-vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--10000_chkpt \
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
 /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/
 
 Send runs checkpoint from VCP to local with update

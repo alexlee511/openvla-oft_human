@@ -65,7 +65,16 @@ BRIDGE_CONSTANTS = {
 
 # Function to detect robot platform from command line arguments
 def detect_robot_platform():
-    cmd_args = " ".join(sys.argv).lower()
+    argv = [arg.lower() for arg in sys.argv]
+    cmd_args = " ".join(argv)
+
+    def get_flag_value(flag_name: str):
+        for idx, arg in enumerate(argv):
+            if arg == flag_name and idx + 1 < len(argv):
+                return argv[idx + 1]
+            if arg.startswith(flag_name + "="):
+                return arg.split("=", 1)[1]
+        return None
 
     if "libero" in cmd_args:
         # OFT non-joint checkpoints encode this pattern in their model path/name.
@@ -79,7 +88,10 @@ def detect_robot_platform():
         #   1. "--use_joint_pos true" flag is explicitly set, OR
         #   2. dataset name contains "_humanized" (e.g. libero_10_humanized), OR
         #   3. dataset name contains "_joint" (e.g. libero_10_joint_noops)
-        if "--use_joint_pos true" in cmd_args or "_humanized" in cmd_args or "_joint" in cmd_args:
+        use_joint_pos = get_flag_value("--use_joint_pos")
+        if use_joint_pos == "true":
+            return "LIBERO_HUMANIZED"
+        if "_humanized" in cmd_args or "_joint_noops" in cmd_args or "_joint_no_noops" in cmd_args:
             return "LIBERO_HUMANIZED"
         return "LIBERO_ORIGINAL"
     elif "aloha" in cmd_args:

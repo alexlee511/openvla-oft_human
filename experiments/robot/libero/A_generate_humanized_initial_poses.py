@@ -75,11 +75,17 @@ class HumanElbowProjector:
         map_fn: Optional[SoechtingMap] = None,
         slsqp_maxiter: int = 100,
         slsqp_ftol: float = 1e-9,
-        w_elbow: float = 1.0,
+        w_elbow: float = 36.0,
         w_limit: float = 1.0,
-        w_posture: float = 0.001,
-        w_temporal: float = 0.1,
+        w_posture: float = 0.05,
+        w_temporal: float = 30.0,
         ori_constraint_max: float = 1.0,
+        # Interface compatibility with A_elbow_projector_25.py
+        # (accepted for parity; not used by this SLSQP objective path)
+        w_ori: float = 0.0,
+        approach_ori_boost: float = 14.0,
+        approach_elbow_damp: float = 0.95,
+        w_link7: float = 6.0,
     ):
         self.arm_joint_names = list(arm_joint_names)
         self.shoulder_body = shoulder_body
@@ -96,6 +102,10 @@ class HumanElbowProjector:
         self.w_posture = w_posture
         self.w_temporal = w_temporal
         self.ori_constraint_max = ori_constraint_max
+        self.w_ori = w_ori
+        self.approach_ori_boost = approach_ori_boost
+        self.approach_elbow_damp = approach_elbow_damp
+        self.w_link7 = w_link7
         self._prev_q = None
         self._prev_ref = None
 
@@ -283,7 +293,17 @@ class HumanElbowProjector:
         return full_qpos, debug
 
 
-def generate_humanized_initial_poses(suite_name: str):
+def _load_npz_init_pose(npz_root: Path, task_stem: str, demo_idx: int) -> Optional[np.ndarray]:
+    """Try to load joint_states_human[0][:7] from a pre-computed humanized.npz."""
+    npz_path = npz_root / f"{task_stem}_demo" / "humanized_demo" / f"demo_{demo_idx:02d}" / "humanized.npz"
+    if not npz_path.exists():
+        return None
+    data = np.load(npz_path, allow_pickle=True)
+    q = np.array(data["joint_states_human"][0], dtype=np.float32)[:7]
+    return q
+
+
+def generate_humanized_initial_poses(suite_name: str, npz_root: Optional[Path] = None):
     suite = benchmark.get_benchmark_dict()[suite_name]()
     results = {}
 
@@ -291,6 +311,28 @@ def generate_humanized_initial_poses(suite_name: str):
         task = suite.get_task(task_id)
         task_stem = Path(task.bddl_file).stem
         initial_states = suite.get_task_init_states(task_id)
+
+        # When npz_root is provided, try loading directly from humanized.npz first.
+        if npz_root is not None:
+            task_poses = []
+            needs_projector = []
+            for demo_idx in range(len(initial_states)):
+                q = _load_npz_init_pose(npz_root, task_stem, demo_idx)
+                task_poses.append(q)  # None = needs projector fallback
+                if q is None:
+                    needs_projector.append(demo_idx)
+            if not needs_projector:
+                # All demos loaded from npz; no env needed.
+                results[task_stem] = task_poses
+                loaded = len(task_poses)
+                print(f"  {task_stem}: loaded {loaded}/{loaded} from npz")
+                continue
+            # Some demos missing from npz; fall back to projector for those.
+            print(f"  {task_stem}: {len(needs_projector)} demos missing from npz, using projector fallback")
+        else:
+            needs_projector = list(range(len(initial_states)))
+            task_poses = [None] * len(initial_states)
+
         env, _ = get_libero_env(task, "openvla", resolution=256, use_joint_pos=True, joint_substeps=1)
         env.reset()
 
@@ -299,17 +341,23 @@ def generate_humanized_initial_poses(suite_name: str):
             shoulder_body="robot0_link2",
             elbow_body="robot0_link4",
             wrist_body="robot0_link6",
+            w_temporal=30.0,
+            w_ori=0.0,
+            approach_ori_boost=14.0,
+            approach_elbow_damp=0.95,
+            w_elbow=36.0,
+            w_link7=6.0,
+            w_posture=0.05,
         )
         projector.bind(env.sim)
 
-        task_poses = []
-        for initial_state in initial_states:
-            obs = env.set_init_state(initial_state)
+        for demo_idx in needs_projector:
+            obs = env.set_init_state(initial_states[demo_idx])
             original_q = np.asarray(obs["robot0_joint_pos"], dtype=np.float64)
             projector._prev_q = None
             projector._prev_ref = None
             q_full, _ = projector.project(env.sim, qpos_in=original_q, return_debug=True, approach_blend=0.0)
-            task_poses.append(np.asarray(q_full[projector.qpos_adrs], dtype=np.float32))
+            task_poses[demo_idx] = np.asarray(q_full[projector.qpos_adrs], dtype=np.float32)
 
         results[task_stem] = task_poses
         try:
@@ -320,8 +368,8 @@ def generate_humanized_initial_poses(suite_name: str):
     return results
 
 
-def generate_humanized_initial_poses_for_suites(suite_names):
-    return {suite_name: generate_humanized_initial_poses(suite_name) for suite_name in suite_names}
+def generate_humanized_initial_poses_for_suites(suite_names, npz_root: Optional[Path] = None):
+    return {suite_name: generate_humanized_initial_poses(suite_name, npz_root=npz_root) for suite_name in suite_names}
 
 
 def write_output(results_by_suite, output_path: Path, suite_names):
@@ -330,8 +378,9 @@ def write_output(results_by_suite, output_path: Path, suite_names):
     lines.append(f'"""Stored humanized initial arm joint poses for suites: {suite_list}.')
     lines.append("")
     lines.append("Generated from benchmark initial simulator states using the copied")
-    lines.append("HumanElbowProjector logic in A_generate_humanized_initial_poses.py")
-    lines.append("with approach_blend=0.0, then stored for eval-time reuse.")
+    lines.append("HumanElbowProjector logic in A_generate_humanized_initial_poses.py.")
+    lines.append("When --npz_root is supplied, joint_states_human[0] is read directly")
+    lines.append("from pre-computed humanized.npz files (zero error vs training data).")
     lines.append('"""')
     lines.append("")
     lines.append("import numpy as np")
@@ -364,10 +413,20 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--suite_name", nargs="*", default=DEFAULT_SUITE_NAMES)
     parser.add_argument("--output_path", default=str(DEFAULT_OUTPUT_PATH))
+    parser.add_argument(
+        "--npz_root",
+        default=None,
+        help="Root directory of pre-computed humanized.npz files "
+             "(e.g. /path/to/result/humanized_npz/libero_10_humanized for libero_10). "
+             "When provided, joint_states_human[0] is read directly from "
+             "{npz_root}/{task}_demo/humanized_demo/demo_{i:02d}/humanized.npz "
+             "instead of running the projector, giving zero error vs training data.",
+    )
     args = parser.parse_args()
 
     suite_names = args.suite_name or DEFAULT_SUITE_NAMES
-    results = generate_humanized_initial_poses_for_suites(suite_names)
+    npz_root = Path(args.npz_root) if args.npz_root else None
+    results = generate_humanized_initial_poses_for_suites(suite_names, npz_root=npz_root)
     output_path = Path(args.output_path)
     write_output(results, output_path, suite_names)
     total_tasks = sum(len(tasks) for tasks in results.values())

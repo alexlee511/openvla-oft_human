@@ -26,7 +26,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                 # Fallback: construct from joint_states + mean of gripper_states
                 joint_states = F['data'][f"demo_{demo_id}"]["obs"]["joint_states"][()]  # (T, 7)
                 gripper_states = F['data'][f"demo_{demo_id}"]["obs"]["gripper_states"][()]  # (T, 2)
-                gripper_width = np.mean(gripper_states, axis=1, keepdims=True)
+                gripper_width = np.sum(np.abs(gripper_states), axis=1, keepdims=True)
                 states = np.concatenate([joint_states, gripper_width], axis=-1)  # (T, 8)
             joint_states = F['data'][f"demo_{demo_id}"]["obs"]["joint_states"][()]
             images = F['data'][f"demo_{demo_id}"]["obs"]["agentview_rgb"][()]

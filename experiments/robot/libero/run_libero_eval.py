@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import sys
+from collections import OrderedDict
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum
@@ -357,7 +358,9 @@ def prepare_observation(obs, resize_size, use_joint_pos=False):
     # Prepare observations dict
     if use_joint_pos:
         # Joint position proprio: [joint_pos(7), gripper_width(1)] = 8D
-        gripper_width = np.mean(obs["robot0_gripper_qpos"])  # scalar
+        # Finger qpos are often opposite-signed (e.g. [+x, -x]); using mean would
+        # collapse width toward 0 even when the gripper is open.
+        gripper_width = np.sum(np.abs(obs["robot0_gripper_qpos"]))  # scalar width proxy
         state = np.concatenate((obs["robot0_joint_pos"], [gripper_width]))
     else:
         # EEF proprio: [pos(3), axisangle(3), gripper_qpos(2)] = 8D
@@ -433,6 +436,117 @@ def _snapshot_object_positions(obs):
             obj_name = key[:-4]  # strip "_pos"
             positions[obj_name] = np.array(obs[key], dtype=np.float64).copy()
     return positions
+
+
+def _task_text_matches_prefix(desc_lower, prefix):
+    """Return True when an obs prefix plausibly refers to a task-mentioned entity."""
+    words = re.sub(r"_\d+$", "", prefix).split("_")
+    for start in range(len(words)):
+        candidate = " ".join(words[start:])
+        if candidate and candidate in desc_lower:
+            return True
+    return False
+
+
+def _obs_prefix_from_key(key):
+    """Strip common observation suffixes to recover the semantic object prefix."""
+    for suffix in ["_to_robot0_eef_pos", "_joint_qpos", "_joint_pos", "_joint_qvel", "_quat", "_pos"]:
+        if key.endswith(suffix):
+            return key[: -len(suffix)]
+    return key
+
+
+def _is_small_numeric_obs_value(value):
+    """Keep only compact numeric task-state entries; skip images and large tensors."""
+    arr = np.asarray(value)
+    if arr.dtype.kind not in "biuf":
+        return False
+    return arr.size <= 16
+
+
+def _sanitize_npz_key(key):
+    """Make observation keys safe to store as NPZ entry names."""
+    return re.sub(r"[^0-9a-zA-Z_]+", "_", key).strip("_")
+
+
+def _unwrap_mj_model_data(env):
+    """Return raw MuJoCo model / data handles for a LIBERO env."""
+    sim = env.env.sim
+    model = sim.model
+    data = sim.data
+    if hasattr(model, "_model"):
+        model = model._model
+    if hasattr(data, "_data"):
+        data = data._data
+    return model, data
+
+
+def _extract_task_relevant_articulation_joints(task_description, env):
+    """Find non-robot MuJoCo joints for task-relevant articulated fixtures."""
+    desc_lower = task_description.lower()
+    keyword_aliases = {
+        "microwave": ["microwave"],
+        "stove": ["stove", "flat_stove"],
+        "drawer": ["drawer", "cabinet"],
+        "cabinet": ["cabinet"],
+    }
+
+    active_aliases = set()
+    for keyword, aliases in keyword_aliases.items():
+        if keyword in desc_lower:
+            active_aliases.update(aliases)
+
+    if not active_aliases:
+        return []
+
+    model, _ = _unwrap_mj_model_data(env)
+    joint_names = []
+    for idx in range(model.njnt):
+        joint_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, idx)
+        if not joint_name or joint_name.startswith("robot0_"):
+            continue
+        joint_name_lower = joint_name.lower()
+        if any(alias in joint_name_lower for alias in active_aliases):
+            joint_names.append(joint_name)
+    return sorted(joint_names)
+
+
+def _get_joint_qpos_scalar(env, joint_name):
+    """Read a scalar MuJoCo qpos value for the named joint."""
+    model, data = _unwrap_mj_model_data(env)
+    if hasattr(model, "get_joint_qpos_addr"):
+        qpos_addr = model.get_joint_qpos_addr(joint_name)
+        if isinstance(qpos_addr, tuple):
+            qpos_addr = qpos_addr[0]
+    else:
+        joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+        qpos_addr = model.jnt_qposadr[joint_id]
+    return float(data.qpos[int(qpos_addr)])
+
+
+def _extract_task_relevant_obs_keys(task_description, obs):
+    """Select task-relevant non-image numeric observation keys for rollout tracing."""
+    desc_lower = task_description.lower()
+    available_objects = sorted(_snapshot_object_positions(obs).keys())
+    manipulated, goals = _parse_task_objects(task_description, available_objects)
+
+    relevant_prefixes = set(manipulated) | set(goals)
+    for key, value in obs.items():
+        if key.startswith("robot0_") or "image" in key or not _is_small_numeric_obs_value(value):
+            continue
+        prefix = _obs_prefix_from_key(key)
+        if _task_text_matches_prefix(desc_lower, prefix):
+            relevant_prefixes.add(prefix)
+
+    relevant_keys = []
+    for key, value in obs.items():
+        if key.startswith("robot0_") or "image" in key or not _is_small_numeric_obs_value(value):
+            continue
+        prefix = _obs_prefix_from_key(key)
+        if prefix in relevant_prefixes:
+            relevant_keys.append(key)
+
+    return sorted(relevant_prefixes), sorted(relevant_keys)
 
 
 def _update_min_eef_distances(obs, min_distances):
@@ -687,202 +801,9 @@ def save_aggregate_results(task_results, rollout_dir, cfg):
         json.dump(json_data, fh, indent=2)
 
     logger.info(f"Saved aggregate results to {agg_dir}/")
-
-    # --- Plots from episode records ---
-    try:
-        _generate_aggregate_plots(rollout_dir, agg_dir, task_results)
-    except Exception as e:
-        logger.warning(f"Could not generate aggregate plots: {e}")
+    logger.info("Skipped aggregate heuristic plots; use per-step rollout traces in rollout_data for diagnosis.")
 
     return agg_dir
-
-
-def _generate_aggregate_plots(rollout_dir, agg_dir, task_results):
-    """Read per-episode records and produce individual analysis plots.
-
-    Creates 5 separate PNG files, each a **vertical**-bar chart (tasks on
-    x-axis, full task names rotated below):
-      1. success_count.png
-      2. progress_ratio.png   (N/A when goal is an env fixture)
-      3. goal_proximity.png   (N/A when goal is an env fixture)
-      4. min_eef_distance.png (closest EEF approach to matched objects)
-      5. object_displacement.png
-    Each chart includes a dashed line for the overall average and per-bar
-    value labels.  Tasks with no data for a metric are shown in grey with
-    an "N/A" annotation.
-    """
-    import glob
-    import matplotlib
-    matplotlib.use("Agg")  # non-interactive backend for headless servers
-    import matplotlib.pyplot as plt
-
-    record_dir = os.path.join(rollout_dir, "record")
-    record_files = sorted(glob.glob(os.path.join(record_dir, "*.json")))
-    if not record_files:
-        logger.warning("No record JSON files found; skipping plot generation.")
-        return
-
-    # Load all records
-    records = []
-    for rf in record_files:
-        with open(rf) as fh:
-            records.append(json.load(fh))
-
-    # ---------- Aggregate per task ----------
-    from collections import defaultdict
-    task_metrics = defaultdict(lambda: {
-        "progress_ratios": [],
-        "goal_proximities": [],
-        "min_eef_dists": [],
-        "displacements": [],
-        "successes": 0,
-        "episodes": 0,
-    })
-
-    for rec in records:
-        task = rec["task_description"]
-        tm = task_metrics[task]
-        tm["episodes"] += 1
-        if rec["success"]:
-            tm["successes"] += 1
-
-        # Re-compute manipulated / goal classification from raw object data
-        # using the current (improved) parser, so old records also benefit.
-        all_obj_names = list(rec.get("objects", {}).keys())
-        manipulated, goals = _parse_task_objects(task, all_obj_names)
-
-        for obj_name in manipulated:
-            od = rec["objects"].get(obj_name, {})
-            mef = od.get("min_eef_distance_m")
-            if mef is not None and mef < 1e6:
-                tm["min_eef_dists"].append(mef)
-            disp = od.get("displacement_m")
-            if disp is not None:
-                tm["displacements"].append(disp)
-
-            # Progress ratio / goal proximity: only when a goal object exists
-            if goals:
-                goal_obj = goals[0]
-                goal_od = rec["objects"].get(goal_obj, {})
-                init_pos = od.get("initial_pos")
-                final_pos = od.get("final_pos")
-                goal_init = goal_od.get("initial_pos")
-                goal_final = goal_od.get("final_pos")
-                if init_pos and final_pos and goal_init and goal_final:
-                    init_dist = float(np.linalg.norm(
-                        np.array(init_pos) - np.array(goal_init)))
-                    final_dist = float(np.linalg.norm(
-                        np.array(final_pos) - np.array(goal_final)))
-                    progress = (init_dist - final_dist) / max(init_dist, 1e-6)
-                    tm["progress_ratios"].append(progress)
-                    tm["goal_proximities"].append(final_dist)
-
-    # Sort tasks alphabetically; use full names for display
-    task_names_sorted = sorted(task_metrics.keys())
-    display_names = [t.lower() for t in task_names_sorted]
-    n_tasks = len(task_names_sorted)
-
-    # Per-task averages (use NaN for genuinely missing data)
-    def _mean_or_nan(lst):
-        return float(np.mean(lst)) if lst else float("nan")
-
-    succ_counts   = [task_metrics[t]["successes"]                  for t in task_names_sorted]
-    avg_progress  = [_mean_or_nan(task_metrics[t]["progress_ratios"])  for t in task_names_sorted]
-    avg_goal_prox = [_mean_or_nan(task_metrics[t]["goal_proximities"]) for t in task_names_sorted]
-    avg_eef_dist  = [_mean_or_nan(task_metrics[t]["min_eef_dists"])    for t in task_names_sorted]
-    avg_disp      = [_mean_or_nan(task_metrics[t]["displacements"])    for t in task_names_sorted]
-
-    # Overall averages (only from tasks that have data)
-    def _overall(per_task_vals):
-        valid = [v for v in per_task_vals if not np.isnan(v)]
-        return float(np.mean(valid)) if valid else 0.0
-
-    overall_succ = sum(succ_counts) / max(n_tasks, 1)
-    overall_pr   = _overall(avg_progress)
-    overall_gp   = _overall(avg_goal_prox)
-    overall_eef  = _overall(avg_eef_dist)
-    overall_disp = _overall(avg_disp)
-
-    x_pos = np.arange(n_tasks)
-    bar_width = 0.6
-    fig_width = max(n_tasks * 1.4, 8)
-
-    # ---------- Helper to create one vertical bar-chart ----------
-    def _save_bar_plot(filename, values, color, ylabel, title, overall_avg,
-                       fmt=".3f", value_labels=None):
-        fig, ax = plt.subplots(figsize=(fig_width, 6))
-
-        # Separate valid vs N/A bars
-        bar_colors = []
-        plot_vals = []
-        for v in values:
-            if np.isnan(v):
-                bar_colors.append("#CCCCCC")  # grey for N/A
-                plot_vals.append(0)
-            else:
-                bar_colors.append(color)
-                plot_vals.append(v)
-
-        bars = ax.bar(x_pos, plot_vals, width=bar_width, color=bar_colors, alpha=0.85)
-        ax.axhline(overall_avg, color="black", linestyle="--", linewidth=1.5,
-                   label=f"overall avg = {overall_avg:{fmt}}")
-        ax.set_ylabel(ylabel, fontsize=10)
-        ax.set_title(title, fontsize=13, fontweight="bold")
-        ax.legend(fontsize=9, loc="upper right")
-        ax.set_xticks(x_pos)
-        ax.set_xticklabels(display_names, fontsize=8, rotation=35, ha="right")
-
-        # Value labels above each bar
-        for i, (bar, val) in enumerate(zip(bars, values)):
-            if np.isnan(val):
-                label = "N/A"
-            elif value_labels:
-                label = value_labels[i]
-            else:
-                label = f"{val:{fmt}}"
-            ax.text(bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() + ax.get_ylim()[1] * 0.01,
-                    label, ha="center", va="bottom", fontsize=8)
-
-        fig.tight_layout()
-        path = os.path.join(agg_dir, filename)
-        fig.savefig(path, dpi=150, bbox_inches="tight")
-        plt.close(fig)
-        logger.info(f"Saved plot: {path}")
-
-    # 1) Success count (always valid)
-    succ_labels = [
-        f"{task_metrics[task_names_sorted[i]]['successes']}/{task_metrics[task_names_sorted[i]]['episodes']}"
-        for i in range(n_tasks)
-    ]
-    _save_bar_plot("success_count.png",
-                   [float(s) for s in succ_counts], "#4CAF50",
-                   "# Successes", "Success Count per Task", overall_succ,
-                   fmt=".1f", value_labels=succ_labels)
-
-    # 2) Progress ratio (N/A when goal is an env fixture like stove/cabinet)
-    _save_bar_plot("progress_ratio.png", avg_progress, "#2196F3",
-                   "Progress Ratio (0 → 1)",
-                   "Avg Progress Ratio per Task  (grey = goal not trackable)",
-                   overall_pr)
-
-    # 3) Goal proximity (lower = better; N/A when goal not trackable)
-    _save_bar_plot("goal_proximity.png", avg_goal_prox, "#FF9800",
-                   "Final Distance to Goal (m)",
-                   "Avg Goal Proximity per Task  (lower = better; grey = N/A)",
-                   overall_gp)
-
-    # 4) Min EEF distance (lower = better)
-    _save_bar_plot("min_eef_distance.png", avg_eef_dist, "#9C27B0",
-                   "Min EEF Distance (m)",
-                   "Avg Min EEF Approach per Task  (lower = closer)",
-                   overall_eef)
-
-    # 5) Object displacement
-    _save_bar_plot("object_displacement.png", avg_disp, "#F44336",
-                   "Object Displacement (m)",
-                   "Avg Object Displacement per Task",
-                   overall_disp)
 
 
 def run_episode(
@@ -957,6 +878,13 @@ def run_episode(
     initial_object_positions = _snapshot_object_positions(obs)
     min_eef_distances = {}
     initial_eef_pos = np.array(obs["robot0_eef_pos"], dtype=np.float64).copy()
+    task_relevant_prefixes, task_relevant_obs_keys = _extract_task_relevant_obs_keys(task_description, obs)
+    task_articulation_joints = _extract_task_relevant_articulation_joints(task_description, env)
+    task_obs_templates = OrderedDict(
+        (key, np.asarray(obs[key], dtype=np.float32).copy()) for key in task_relevant_obs_keys
+    )
+    rollout_task_obs = OrderedDict((key, []) for key in task_relevant_obs_keys)
+    rollout_task_articulation = OrderedDict((joint_name, []) for joint_name in task_articulation_joints)
 
     # Initialize action queue
     if cfg.num_open_loop_steps != NUM_ACTIONS_CHUNK:
@@ -1019,6 +947,15 @@ def run_episode(
             # Prepare observation
             observation, img = prepare_observation(obs, resize_size, cfg.use_joint_pos)
             replay_images.append(img)
+            for key, template in task_obs_templates.items():
+                if key in obs:
+                    rollout_task_obs[key].append(np.asarray(obs[key], dtype=np.float32).copy())
+                else:
+                    rollout_task_obs[key].append(np.full_like(template, np.nan, dtype=np.float32))
+            for joint_name in task_articulation_joints:
+                rollout_task_articulation[joint_name].append(
+                    np.float32(_get_joint_qpos_scalar(env, joint_name))
+                )
             # Update min EEF-to-object distances for episode record
             _update_min_eef_distances(obs, min_eef_distances)
             # Collect frontview for separate video
@@ -1132,6 +1069,20 @@ def run_episode(
 
     # Package rollout joint data
     joint_pos_arr = np.array(rollout_joint_pos) if rollout_joint_pos else np.empty((0, 7))
+    task_obs_arrays = OrderedDict(
+        (
+            f"task_obs__{idx:02d}__{_sanitize_npz_key(key)}",
+            np.asarray(values, dtype=np.float32) if values else np.empty((0,), dtype=np.float32),
+        )
+        for idx, (key, values) in enumerate(rollout_task_obs.items())
+    )
+    task_articulation_arrays = OrderedDict(
+        (
+            f"task_articulation__{idx:02d}__{_sanitize_npz_key(joint_name)}",
+            np.asarray(values, dtype=np.float32) if values else np.empty((0,), dtype=np.float32),
+        )
+        for idx, (joint_name, values) in enumerate(rollout_task_articulation.items())
+    )
     rollout_data = {
         # Compatible with A_human_likeness_evaluate.py --sim_npz
         "joint_states_sim": joint_pos_arr,             # (T, 7) alias for human-likeness eval
@@ -1148,7 +1099,12 @@ def run_episode(
         "model_joint_targets": np.array(rollout_actions_raw)[:, :7] if rollout_actions_raw else np.empty((0, 7)),  # model's intended joint positions
         "success": np.array(success),
         "task_description": np.array(task_description),
+        "task_relevant_prefixes": np.array(task_relevant_prefixes, dtype=str),
+        "task_relevant_obs_keys": np.array(task_relevant_obs_keys, dtype=str),
+        "task_articulation_joints": np.array(task_articulation_joints, dtype=str),
     }
+    rollout_data.update(task_obs_arrays)
+    rollout_data.update(task_articulation_arrays)
 
     return success, replay_images, frontview_images, rollout_data, episode_record
 
