@@ -15,10 +15,20 @@ python experiments/robot/libero/A_generate_humanized_initial_poses.py \
   --suite_name libero_10 \
   --npz_root /home/vsp1323/alex/LIBERO/scripts/result/humanized_npz/libero_10_humanized
 
+python experiments/robot/libero/A_generate_humanized_initial_poses.py \
+  --suite_name libero_10 libero_spatial \
+  --npz_root \
+    /home/vsp1323/alex/LIBERO/scripts/result/humanized_npz/libero_10_humanized \
+    /home/vsp1323/alex/LIBERO/scripts/result/humanized_npz/libero_spatial_humanized
+    
+python experiments/robot/libero/A_generate_humanized_initial_poses.py \
+  --suite_name libero_4_tasks \
+  --npz_root /home/vsp1323/alex/LIBERO/scripts/result/humanized_npz/libero___humanized_vbasep21
+  
 EVAL humanized libero_10:
 
 python experiments/robot/libero/run_libero_eval.py \
-  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
+  --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_4_tasks/openvla-7b+libero_4_task_suites_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
   --task_suite_name libero_10 \
   --use_l1_regression true \
   --use_proprio true \
@@ -27,12 +37,11 @@ python experiments/robot/libero/run_libero_eval.py \
   --num_images_in_input 2 \
   --center_crop true \
   --num_open_loop_steps 8 \
-  --num_trials_per_task 5 \
+  --num_trials_per_task 10 \
   --joint_substeps 1 \
   --joint_Kp_overshoot 3.5 \
   --use_wandb true \
-  --wandb_entity alexlee511-national-taipei-university-of-technology \
-  --wandb_project openvla-oft_human
+  --wandb_entity alexlee511-national-taipei-university-of-technology --wandb_project openvla-oft_human
   
 python experiments/robot/libero/run_libero_eval.py \
   --pretrained_checkpoint /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
@@ -119,7 +128,7 @@ python experiments/robot/libero/run_libero_eval.py \
   --wandb_project openvla-oft
    
 
-
+--record_settle_frames true
 
 # For each .npz in the rollout_data directory:
 python /home/vsp1323/alex/LIBERO/scripts/A_human_likeness_evaluate.py \
@@ -135,4 +144,16 @@ python experiments/robot/libero/A_vla_rollout_hl.py \
 # After eval 2 (humanized):
 python experiments/robot/libero/A_vla_rollout_hl.py \
     --rollout_dir ./rollouts/libero_10/<humanized_checkpoint>/<datetime>/ \
+    --suite libero_10
+    
+python experiments/robot/libero/A_vla_rollout_hl.py \
+    --rollout_dir /home/vsp1323/alex/openvla-oft_human/rollouts/libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_/2026_05_04-01_09_04 \
+    --suite libero_10
+    
+python experiments/robot/libero/A_vla_rollout_hl.py \
+    --rollout_dir /home/vsp1323/alex/openvla-oft_human/rollouts/libero_10/openvla-7b+libero_4_task_suites_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--eef_ctrl--parallel_dec--8_acts_c/2026_05_04-04_23_08 \
+    --suite libero_10
+    
+python experiments/robot/libero/A_vla_rollout_hl.py \
+    --rollout_dir /home/vsp1323/alex/openvla-oft_human/rollouts/libero_10/openvla-7b+libero_4_task_suites_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_d/2026_05_12-02_28_55 \
     --suite libero_10

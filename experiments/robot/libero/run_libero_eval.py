@@ -130,11 +130,13 @@ class GenerateConfig:
     # LIBERO environment-specific parameters
     #################################################################################################################
     task_suite_name: str = TaskSuite.LIBERO_SPATIAL  # Task suite
-    num_steps_wait: int = 10                         # Number of steps to wait for objects to stabilize in sim
+    num_steps_wait: int = 20                         # Number of steps to wait for objects to stabilize in sim
+    num_steps_wait_after_humanized_pose: int = 20    # Extra dummy steps after applying the humanized arm pose, before policy rollout
     num_trials_per_task: int = 50                    # Number of rollouts per task
     initial_states_path: str = "DEFAULT"             # "DEFAULT", or path to initial states JSON file
     env_img_res: int = 512                           # Resolution for environment images (higher=better video, min 256)
     use_humanized_initial_pose: bool = False         # Force-enable stored humanized first-frame joints; otherwise auto-enable for humanized joint runs
+    record_settle_frames: bool = False               # If True, include the post-init frame and all settle-step frames in saved videos
 
     #################################################################################################################
     # Utils
@@ -745,6 +747,8 @@ def save_aggregate_results(task_results, rollout_dir, cfg):
     lines += [
         f"Num open-loop steps: {cfg.num_open_loop_steps}",
         f"Num trials per task: {cfg.num_trials_per_task}",
+        f"Num settle steps before rollout: {cfg.num_steps_wait}",
+        f"Num settle steps after humanized pose: {cfg.num_steps_wait_after_humanized_pose}",
         "",
         f"{'Task':<60} {'Success':>10} {'Rate':>8}",
         "-" * 82,
@@ -784,6 +788,8 @@ def save_aggregate_results(task_results, rollout_dir, cfg):
             "joint_damping_ratio": cfg.joint_damping_ratio if cfg.use_joint_pos else None,
             "joint_Kp_overshoot": cfg.joint_Kp_overshoot if cfg.use_joint_pos else None,
             "num_open_loop_steps": cfg.num_open_loop_steps,
+            "num_steps_wait": cfg.num_steps_wait,
+            "num_steps_wait_after_humanized_pose": cfg.num_steps_wait_after_humanized_pose,
             "num_trials_per_task": cfg.num_trials_per_task,
         },
         "per_task": {
@@ -838,15 +844,15 @@ def run_episode(
         for observable in base_env._observables.values():
             observable.set_sampling_rate(effective_freq)
 
-    # Set initial state if provided
+    # Set the benchmark initial state first, let the scene settle, and only then
+    # apply any requested humanized arm pose. This avoids objects colliding with
+    # the teleported arm while they are still settling onto the table.
     if initial_state is not None:
         obs = env.set_init_state(initial_state)
     else:
         obs = refresh_env_observation(env)
 
-    if initial_joint_pose is not None:
-        apply_initial_arm_joint_pose(env, initial_joint_pose)
-        obs = refresh_env_observation(env)
+    pending_initial_joint_pose = None if initial_joint_pose is None else np.array(initial_joint_pose, copy=True)
 
     # --- JOINT_POSITION: patch controller output_max & kp for fast tracking ---
     # Parameters matched to A_libero_joint_replay.py:
@@ -885,6 +891,7 @@ def run_episode(
     )
     rollout_task_obs = OrderedDict((key, []) for key in task_relevant_obs_keys)
     rollout_task_articulation = OrderedDict((joint_name, []) for joint_name in task_articulation_joints)
+    tracking_reinitialized = False
 
     # Initialize action queue
     if cfg.num_open_loop_steps != NUM_ACTIONS_CHUNK:
@@ -906,6 +913,14 @@ def run_episode(
     max_steps = TASK_MAX_STEPS[cfg.task_suite_name]
     n_sub = cfg.joint_substeps if cfg.use_joint_pos else 1
 
+    def _append_settle_video_frames(current_obs):
+        """Optionally include init/settle frames in saved videos for debugging."""
+        replay_images.append(get_libero_image(current_obs))
+        try:
+            frontview_images.append(get_libero_frontview_image(current_obs))
+        except KeyError:
+            pass  # frontview not available in this env
+
     # For sub-stepping: get the robosuite base env for low-level physics stepping
     # without camera rendering on intermediate sub-steps.
     _robo_env = None
@@ -921,6 +936,9 @@ def run_episode(
         base_control_freq = 20  # original LIBERO controller rate
         n_sub = sim_freq // base_control_freq  # 25
         print(f"[Sub-step] auto n_sub={n_sub} (sim_freq={sim_freq}, base_cf={base_control_freq})")
+
+    if cfg.record_settle_frames:
+        _append_settle_video_frames(obs)
 
     # Run episode
     success = False
@@ -941,8 +959,36 @@ def run_episode(
                             _robo_env.sim.step()
                             policy_step = False
                 obs, reward, done, info = env.step(dummy)
+                if cfg.record_settle_frames:
+                    _append_settle_video_frames(obs)
                 t += 1
                 continue
+
+            if pending_initial_joint_pose is not None:
+                apply_initial_arm_joint_pose(env, pending_initial_joint_pose)
+                obs = refresh_env_observation(env)
+                pending_initial_joint_pose = None
+                if cfg.record_settle_frames:
+                    _append_settle_video_frames(obs)
+                if cfg.num_steps_wait_after_humanized_pose > 0:
+                    dummy = get_libero_dummy_action(cfg.model_family, cfg.use_joint_pos)
+                    for _ in range(cfg.num_steps_wait_after_humanized_pose):
+                        obs, reward, done, info = env.step(dummy)
+                        if cfg.record_settle_frames:
+                            _append_settle_video_frames(obs)
+
+            if not tracking_reinitialized:
+                initial_object_positions = _snapshot_object_positions(obs)
+                min_eef_distances = {}
+                initial_eef_pos = np.array(obs["robot0_eef_pos"], dtype=np.float64).copy()
+                task_relevant_prefixes, task_relevant_obs_keys = _extract_task_relevant_obs_keys(task_description, obs)
+                task_articulation_joints = _extract_task_relevant_articulation_joints(task_description, env)
+                task_obs_templates = OrderedDict(
+                    (key, np.asarray(obs[key], dtype=np.float32).copy()) for key in task_relevant_obs_keys
+                )
+                rollout_task_obs = OrderedDict((key, []) for key in task_relevant_obs_keys)
+                rollout_task_articulation = OrderedDict((joint_name, []) for joint_name in task_articulation_joints)
+                tracking_reinitialized = True
 
             # Prepare observation
             observation, img = prepare_observation(obs, resize_size, cfg.use_joint_pos)
@@ -1317,6 +1363,8 @@ def eval_libero(cfg: GenerateConfig) -> float:
         rf.write(f"Seed: {cfg.seed}\n")
         rf.write(f"Num trials per task: {cfg.num_trials_per_task}\n")
         rf.write(f"Num open loop steps: {cfg.num_open_loop_steps}\n")
+        rf.write(f"Num settle steps before rollout: {cfg.num_steps_wait}\n")
+        rf.write(f"Num settle steps after humanized pose: {cfg.num_steps_wait_after_humanized_pose}\n")
         rf.write(f"Use joint pos: {cfg.use_joint_pos}\n")
         if cfg.use_joint_pos:
             rf.write(f"Joint kp: {cfg.joint_kp}\n")

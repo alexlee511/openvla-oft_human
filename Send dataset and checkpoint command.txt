@@ -1,0 +1,73 @@
+Send dataset from local to VCP:
+Send original joint libero_10:
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_joint_no_noops \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
+
+Send humanized  libero_10:
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_humanized_no_noops \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
+
+Send humanized  libero 4 tasks:
+rsync -rlptDvz --progress --no-g -e "ssh -p 30908" \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_joint_humanized_no_noops \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_spatial_humanized_no_noops \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_goal_humanized_no_noops \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_object_humanized_no_noops \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
+
+Send joint  libero 4 tasks:
+rsync -rlptDvz --progress --no-g -e "ssh -p 32534" \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_joint_no_noops \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_spatial_joint_no_noops \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_goal_joint_no_noops \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_object_joint_no_noops \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
+
+Send update original modified_libero_rlds:
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
+/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/ \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/modified_libero_rlds/
+
+
+
+Send runs checkpoint from VCP to local:
+mkdir -p /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10
+
+(original joint libero 10)
+rsync -rlptDvz --progress --no-g -e "ssh -p 32492" \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/ \
+/home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/
+
+
+Send runs checkpoint from VCP to local :
+(humanized libero 4 tasks)
+rsync -rlptDvz --progress --no-g -e "ssh -p 30908" \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_4_tasks \
+/home/vsp1323/alex/openvla-oft_human/runs/
+
+Send runs checkpoint from VCP to local with only checkpoints:
+(humanized libero 10)
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--20000_chkpt \
+/home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/
+
+Send runs checkpoint from VCP to local with update
+(humanized libero 10)
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" \
+vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/ \
+/home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/
+
+Send runs checkpoint from local to vcp with only checkpoints:
+(Original joint libero 10)
+mkdir -p ~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_joint_libero_10
+
+rsync -rlptDvz --progress --no-g -e "ssh -p 32492" /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/openvla-7b+libero_10_joint_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--19000_chkpt vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_joint_libero_10/
+
+
+Send runs checkpoint from local to vcp with only checkpoints:
+(Humanized libero 10)
+mkdir -p ~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10
+
+rsync -rlptDvz --progress --no-g -e "ssh -p 30067" /home/vsp1323/alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/openvla-7b+libero_10_humanized_no_noops+b64+lr-0.0005+lora-r32+dropout-0.0--image_aug--joint_ctrl--parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state--10000_chkpt vcpuser@vcppx.ntut.edu.tw:~/netdrive/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10/

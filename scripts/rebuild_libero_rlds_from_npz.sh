@@ -48,11 +48,13 @@ case "$MODE" in
     TASK_ROOTS_DIR="$NPZ_BASE_HUMAN"
     OUTPUT_NAME="${SUITE}_humanized_no_noops"
     BUILDER_DIR="rlds_dataset_builder/LIBERO_${BUILDER_SUFFIX}_humanized"
+    TFDS_DATASET_NAME="libero_${SUITE_LABEL}_humanized"
     ;;
   original-joint)
     TASK_ROOTS_DIR="$NPZ_BASE_ORIG"
     OUTPUT_NAME="${SUITE}_joint_no_noops"
     BUILDER_DIR="rlds_dataset_builder/LIBERO_${BUILDER_SUFFIX}_joint"
+    TFDS_DATASET_NAME="libero_${SUITE_LABEL}_joint"
     ;;
   *)
     echo "Unsupported mode: $MODE"
@@ -62,6 +64,7 @@ esac
 
 OUTPUT_DIR="$REPO_ROOT/LIBERO/libero/datasets/$OUTPUT_NAME"
 DEST="$REPO_ROOT/modified_libero_rlds/$OUTPUT_NAME/1.0.0"
+TFDS_PREPARED_DIR="$HOME/tensorflow_datasets/$TFDS_DATASET_NAME/1.0.0"
 
 echo "[1/3] NPZ -> HDF5"
 python experiments/robot/libero/A_npz_to_hdf5.py \
@@ -71,11 +74,13 @@ python experiments/robot/libero/A_npz_to_hdf5.py \
   --require_success
 
 echo "[2/3] TFDS build"
+rm -rf "$TFDS_PREPARED_DIR"
 cd "$REPO_ROOT/$BUILDER_DIR"
 CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
 
 echo "[3/3] Copy latest TFDS shards"
 NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1)
+rm -rf "$DEST"
 mkdir -p "$DEST"
 cp -r "$NEWEST"/* "$DEST"/
 echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"

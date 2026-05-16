@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Sequence
@@ -17,6 +18,14 @@ from experiments.robot.libero.libero_utils import get_libero_env
 
 DEFAULT_OUTPUT_PATH = Path(__file__).with_name("A_humanized_initial_poses.py")
 DEFAULT_SUITE_NAMES = ["libero_spatial", "libero_object", "libero_goal", "libero_10", "libero_90"]
+FOUR_TASK_SUITE_NAMES = ["libero_10", "libero_spatial", "libero_goal", "libero_object"]
+SUITE_NAME_ALIASES = {"libero_4_tasks": FOUR_TASK_SUITE_NAMES}
+SUITE_ROOT_TOKENS = {
+    "libero_10": "10",
+    "libero_spatial": "spatial",
+    "libero_goal": "goal",
+    "libero_object": "object",
+}
 
 MJ_NAME2ID = getattr(mujoco, "mj_name2id")
 MJ_FWD_POSITION = getattr(mujoco, "mj_fwdPosition")
@@ -293,32 +302,104 @@ class HumanElbowProjector:
         return full_qpos, debug
 
 
-def _load_npz_init_pose(npz_root: Path, task_stem: str, demo_idx: int) -> Optional[np.ndarray]:
-    """Try to load joint_states_human[0][:7] from a pre-computed humanized.npz."""
-    npz_path = npz_root / f"{task_stem}_demo" / "humanized_demo" / f"demo_{demo_idx:02d}" / "humanized.npz"
-    if not npz_path.exists():
-        return None
-    data = np.load(npz_path, allow_pickle=True)
-    q = np.array(data["joint_states_human"][0], dtype=np.float32)[:7]
-    return q
+def _load_npz_init_pose(npz_root: Path, task_stem: str, demo_idx: int) -> tuple[Optional[np.ndarray], Optional[str]]:
+    """Try humanized_sim.npz first, then fall back to humanized.npz."""
+    demo_dir = npz_root / f"{task_stem}_demo" / "humanized_demo" / f"demo_{demo_idx:02d}"
+    for filename in ("humanized_sim.npz", "humanized.npz"):
+        npz_path = demo_dir / filename
+        if not npz_path.exists():
+            continue
+        data = np.load(npz_path, allow_pickle=True)
+        q = np.array(data["joint_states_human"][0], dtype=np.float32)[:7]
+        return q, filename
+    return None, None
+
+
+def _expand_suite_names(suite_names: Sequence[str]) -> list[str]:
+    expanded = []
+    for suite_name in suite_names:
+        expanded.extend(SUITE_NAME_ALIASES.get(suite_name, [suite_name]))
+
+    ordered_unique = []
+    seen = set()
+    for suite_name in expanded:
+        if suite_name in seen:
+            continue
+        seen.add(suite_name)
+        ordered_unique.append(suite_name)
+    return ordered_unique
+
+
+def _expand_npz_roots(npz_roots: Optional[Sequence[str]], suite_names: Sequence[str]) -> dict[str, Path]:
+    if not npz_roots:
+        return {}
+
+    if len(npz_roots) == 1:
+        root_template = npz_roots[0]
+        if "___" in root_template:
+            roots_by_suite = {}
+            for suite_name in suite_names:
+                token = SUITE_ROOT_TOKENS.get(suite_name)
+                if token is None:
+                    raise ValueError(f"Suite {suite_name} does not support ___ npz_root expansion")
+                roots_by_suite[suite_name] = Path(root_template.replace("___", f"_{token}_"))
+            return roots_by_suite
+        if len(suite_names) == 1:
+            return {suite_names[0]: Path(root_template)}
+        raise ValueError("Multiple suites require one --npz_root per suite, or one template path containing ___")
+
+    if len(npz_roots) != len(suite_names):
+        raise ValueError("Number of --npz_root values must match the expanded --suite_name list")
+
+    return {suite_name: Path(root) for suite_name, root in zip(suite_names, npz_roots)}
+
+
+def _load_existing_results(output_path: Path) -> dict[str, dict[str, list[list[float]]]]:
+    if not output_path.exists():
+        return {}
+
+    spec = importlib.util.spec_from_file_location("humanized_initial_pose_store", output_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to import existing pose store from {output_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    existing = getattr(module, "HUMANIZED_INITIAL_ARM_JOINTS_BY_SUITE", {})
+    return {
+        suite_name: {
+            task_stem: [list(map(float, pose)) for pose in poses]
+            for task_stem, poses in tasks.items()
+        }
+        for suite_name, tasks in existing.items()
+    }
+
+
+def _sort_suite_names(suite_names: Sequence[str]) -> list[str]:
+    order = {suite_name: index for index, suite_name in enumerate(DEFAULT_SUITE_NAMES)}
+    return sorted(suite_names, key=lambda suite_name: (order.get(suite_name, len(order)), suite_name))
 
 
 def generate_humanized_initial_poses(suite_name: str, npz_root: Optional[Path] = None):
     suite = benchmark.get_benchmark_dict()[suite_name]()
     results = {}
 
+    used_humanized_npz = []
+    projector_fallback_tasks = []
+
     for task_id in range(len(suite.tasks)):
         task = suite.get_task(task_id)
         task_stem = Path(task.bddl_file).stem
         initial_states = suite.get_task_init_states(task_id)
 
-        # When npz_root is provided, try loading directly from humanized.npz first.
+        # When npz_root is provided, try loading directly from humanized_sim.npz first,
+        # then fall back to humanized.npz.
         if npz_root is not None:
             task_poses = []
             needs_projector = []
             for demo_idx in range(len(initial_states)):
-                q = _load_npz_init_pose(npz_root, task_stem, demo_idx)
+                q, source_filename = _load_npz_init_pose(npz_root, task_stem, demo_idx)
                 task_poses.append(q)  # None = needs projector fallback
+                if source_filename == "humanized.npz":
+                    used_humanized_npz.append(f"{task_stem}/demo_{demo_idx:02d}")
                 if q is None:
                     needs_projector.append(demo_idx)
             if not needs_projector:
@@ -328,6 +409,7 @@ def generate_humanized_initial_poses(suite_name: str, npz_root: Optional[Path] =
                 print(f"  {task_stem}: loaded {loaded}/{loaded} from npz")
                 continue
             # Some demos missing from npz; fall back to projector for those.
+            projector_fallback_tasks.append(f"{task_stem} ({len(needs_projector)} demos)")
             print(f"  {task_stem}: {len(needs_projector)} demos missing from npz, using projector fallback")
         else:
             needs_projector = list(range(len(initial_states)))
@@ -365,33 +447,56 @@ def generate_humanized_initial_poses(suite_name: str, npz_root: Optional[Path] =
         except Exception:
             pass
 
+    if npz_root is not None and used_humanized_npz:
+        preview = ", ".join(used_humanized_npz[:5])
+        extra = "" if len(used_humanized_npz) <= 5 else f", ... (+{len(used_humanized_npz) - 5} more)"
+        print(
+            f"WARNING [{suite_name}] {npz_root}: humanized_sim.npz missing for {len(used_humanized_npz)} demos; "
+            f"fell back to humanized.npz for {preview}{extra}"
+        )
+
+    if npz_root is not None and projector_fallback_tasks:
+        preview = ", ".join(projector_fallback_tasks[:5])
+        extra = "" if len(projector_fallback_tasks) <= 5 else f", ... (+{len(projector_fallback_tasks) - 5} more tasks)"
+        print(
+            f"WARNING [{suite_name}] {npz_root}: projector fallback used for {len(projector_fallback_tasks)} tasks: "
+            f"{preview}{extra}"
+        )
+
     return results
 
 
-def generate_humanized_initial_poses_for_suites(suite_names, npz_root: Optional[Path] = None):
-    return {suite_name: generate_humanized_initial_poses(suite_name, npz_root=npz_root) for suite_name in suite_names}
+def generate_humanized_initial_poses_for_suites(suite_names, npz_roots_by_suite: Optional[dict[str, Path]] = None):
+    npz_roots_by_suite = npz_roots_by_suite or {}
+    return {
+        suite_name: generate_humanized_initial_poses(suite_name, npz_root=npz_roots_by_suite.get(suite_name))
+        for suite_name in suite_names
+    }
 
 
 def write_output(results_by_suite, output_path: Path, suite_names):
     lines = []
+    suite_names = _sort_suite_names(suite_names)
     suite_list = ", ".join(suite_names)
     lines.append(f'"""Stored humanized initial arm joint poses for suites: {suite_list}.')
     lines.append("")
     lines.append("Generated from benchmark initial simulator states using the copied")
     lines.append("HumanElbowProjector logic in A_generate_humanized_initial_poses.py.")
     lines.append("When --npz_root is supplied, joint_states_human[0] is read directly")
-    lines.append("from pre-computed humanized.npz files (zero error vs training data).")
+    lines.append("from pre-computed humanized_sim.npz files, falling back to humanized.npz.")
     lines.append('"""')
     lines.append("")
     lines.append("import numpy as np")
     lines.append("")
     lines.append("HUMANIZED_INITIAL_ARM_JOINTS_BY_SUITE = {")
-    for suite_name, results in results_by_suite.items():
+    for suite_name in suite_names:
+        results = results_by_suite[suite_name]
         lines.append(f'    "{suite_name}": {{')
         for task_stem, poses in results.items():
             lines.append(f'        "{task_stem}": [')
             for pose in poses:
-                pose_str = ", ".join(f"{float(value):.8f}" for value in pose.tolist())
+                pose_array = np.asarray(pose, dtype=np.float32)
+                pose_str = ", ".join(f"{float(value):.8f}" for value in pose_array.tolist())
                 lines.append(f"            [{pose_str}],")
             lines.append("        ],")
         lines.append("    },")
@@ -415,23 +520,31 @@ def main():
     parser.add_argument("--output_path", default=str(DEFAULT_OUTPUT_PATH))
     parser.add_argument(
         "--npz_root",
+        nargs="*",
         default=None,
-        help="Root directory of pre-computed humanized.npz files "
-             "(e.g. /path/to/result/humanized_npz/libero_10_humanized for libero_10). "
+        help="One root directory per suite, or one template path containing ___. "
+             "Examples: /path/.../libero_10_humanized or /path/.../libero___humanized_vbasep21. "
              "When provided, joint_states_human[0] is read directly from "
-             "{npz_root}/{task}_demo/humanized_demo/demo_{i:02d}/humanized.npz "
-             "instead of running the projector, giving zero error vs training data.",
+             "{npz_root}/{task}_demo/humanized_demo/demo_{i:02d}/humanized_sim.npz first, "
+             "then humanized.npz, instead of running the projector.",
     )
     args = parser.parse_args()
 
-    suite_names = args.suite_name or DEFAULT_SUITE_NAMES
-    npz_root = Path(args.npz_root) if args.npz_root else None
-    results = generate_humanized_initial_poses_for_suites(suite_names, npz_root=npz_root)
+    suite_names = _expand_suite_names(args.suite_name or DEFAULT_SUITE_NAMES)
     output_path = Path(args.output_path)
-    write_output(results, output_path, suite_names)
-    total_tasks = sum(len(tasks) for tasks in results.values())
-    total_states = sum(len(poses) for tasks in results.values() for poses in tasks.values())
-    print(f"Wrote {output_path} with {len(suite_names)} suites, {total_tasks} tasks, and {total_states} initial states")
+    npz_roots_by_suite = _expand_npz_roots(args.npz_root, suite_names)
+    updated_results = generate_humanized_initial_poses_for_suites(suite_names, npz_roots_by_suite=npz_roots_by_suite)
+
+    merged_results = _load_existing_results(output_path)
+    merged_results.update(updated_results)
+
+    write_output(merged_results, output_path, merged_results.keys())
+    total_tasks = sum(len(tasks) for tasks in updated_results.values())
+    total_states = sum(len(poses) for tasks in updated_results.values() for poses in tasks.values())
+    print(
+        f"Updated {output_path} for suites {', '.join(suite_names)} "
+        f"with {total_tasks} tasks and {total_states} initial states"
+    )
 
 
 if __name__ == "__main__":

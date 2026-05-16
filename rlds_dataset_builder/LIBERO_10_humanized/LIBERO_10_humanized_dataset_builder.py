@@ -13,24 +13,24 @@ from LIBERO_10_humanized.conversion_utils import MultiThreadedDatasetBuilder
 def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
     """Yields episodes for list of data paths."""
 
-    def _parse_example(episode_path, demo_id):
+    def _parse_example(episode_path, demo_key):
         # load raw data from cleaned HDF5 (output of npz_to_hdf5.py)
         with h5py.File(episode_path, "r") as F:
-            if f"demo_{demo_id}" not in F['data'].keys():
+            if demo_key not in F["data"].keys():
                 return None  # skip if demo doesn't exist
-            actions = F['data'][f"demo_{demo_id}"]["actions"][()]          # (T, 8) joint pos + gripper
+            actions = F["data"][demo_key]["actions"][()]          # (T, 8) joint pos + gripper
             # State: [joint_pos(7), gripper_width(1)] = 8D proprio
-            if "state" in F['data'][f"demo_{demo_id}"]["obs"]:
-                states = F['data'][f"demo_{demo_id}"]["obs"]["state"][()]  # (T, 8)
+            if "state" in F["data"][demo_key]["obs"]:
+                states = F["data"][demo_key]["obs"]["state"][()]  # (T, 8)
             else:
                 # Fallback: construct from joint_states + mean of gripper_states
-                joint_states = F['data'][f"demo_{demo_id}"]["obs"]["joint_states"][()]  # (T, 7)
-                gripper_states = F['data'][f"demo_{demo_id}"]["obs"]["gripper_states"][()]  # (T, 2)
+                joint_states = F["data"][demo_key]["obs"]["joint_states"][()]  # (T, 7)
+                gripper_states = F["data"][demo_key]["obs"]["gripper_states"][()]  # (T, 2)
                 gripper_width = np.sum(np.abs(gripper_states), axis=1, keepdims=True)
                 states = np.concatenate([joint_states, gripper_width], axis=-1)  # (T, 8)
-            joint_states = F['data'][f"demo_{demo_id}"]["obs"]["joint_states"][()]
-            images = F['data'][f"demo_{demo_id}"]["obs"]["agentview_rgb"][()]
-            wrist_images = F['data'][f"demo_{demo_id}"]["obs"]["eye_in_hand_rgb"][()]
+            joint_states = F["data"][demo_key]["obs"]["joint_states"][()]
+            images = F["data"][demo_key]["obs"]["agentview_rgb"][()]
+            wrist_images = F["data"][demo_key]["obs"]["eye_in_hand_rgb"][()]
 
         # compute language instruction from filename
         raw_file_string = os.path.basename(episode_path).split('/')[-1]
@@ -69,14 +69,14 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
             }
         }
 
-        return episode_path + f"_{demo_id}", sample
+        return episode_path + f"_{demo_key}", sample
 
     # iterate over all HDF5 paths
     for sample in paths:
         with h5py.File(sample, "r") as F:
-            demo_ids = sorted([int(k.split("_")[1]) for k in F["data"].keys()])
-        for idx in demo_ids:
-            ret = _parse_example(sample, idx)
+            demo_keys = sorted(F["data"].keys(), key=lambda key: int(key.split("_")[-1]))
+        for demo_key in demo_keys:
+            ret = _parse_example(sample, demo_key)
             if ret is not None:
                 yield ret
 
