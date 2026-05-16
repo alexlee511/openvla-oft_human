@@ -88,7 +88,7 @@ class LiberoObjectHumanized(MultiThreadedDatasetBuilder):
     RELEASE_NOTES = {
         '1.0.0': 'Initial release.',
     }
-    N_WORKERS = 1
+    N_WORKERS = 40
     MAX_PATHS_IN_MEMORY = 80
     PARSE_FCN = _generate_examples
 
