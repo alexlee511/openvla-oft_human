@@ -1,5 +1,5 @@
 # For each .npz in the rollout_data directory:
-python /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/A_human_likeness_evaluate.py \
+python /home/vsp1323/Humanized-VLA/LIBERO-humanized/scripts/A_human_likeness_evaluate.py \
   --rollout_npz <path_to_episode_npz> \
   --suite libero_10 \
   --out_dir <output_dir>

@@ -1,9 +1,9 @@
 # Humanized Training Pipeline (openvla-oft_human)
 
-This is the formal description of the training/evaluation pipeline in this repo. Its input is the humanized dataset produced by the companion `LIBERO_human` repo (see `LIBERO_human/HUMANIZATION_PIPELINE.md` for how `humanized.npz`/`humanized_sim.npz` are generated across the five compared methods — Original, Pure-IK, Liu-IK, HRR-IK, TH-IK/ours — and their ablations). This document only covers what happens once that data lands in `openvla-oft_human`.
+This is the formal description of the training/evaluation pipeline in this repo. Its input is the humanized dataset produced by the companion `LIBERO-humanized` repo (see `LIBERO-humanized/HUMANIZATION_PIPELINE.md` for how `humanized.npz`/`humanized_sim.npz` are generated across the five compared methods — Original, Pure-IK, Liu-IK, HRR-IK, TH-IK/ours — and their ablations). This document only covers what happens once that data lands in `openvla-oft_human`.
 
 ```text
-humanized.npz / humanized_sim.npz  (from LIBERO_human, per method/suite/task)
+humanized.npz / humanized_sim.npz  (from LIBERO-humanized, per method/suite/task)
     |
     v
 dataset conversion → RLDS
@@ -24,7 +24,7 @@ rollout human-likeness scoring
 |---|---|
 | `experiments/robot/libero/A_npz_to_hdf5.py` | Packages replay output (`humanized_sim.npz`/`original_sim.npz` from `A_libero_joint_replay.py --collect_obs`) into HDF5. |
 | `rlds_dataset_builder/LIBERO_{10,Goal,Object,Spatial}_{humanized,joint}/` | TFDS dataset builders that turn the HDF5 into RLDS TFRecord datasets (one builder dir per suite × {humanized, joint}). |
-| `scripts/rebuild_libero_rlds_from_npz.sh` | End-to-end wrapper: NPZ → HDF5 → RLDS, for one `<humanized\|original-joint> <suite> [method]` at a time — `[method]` is `pure-ik`/`liu-ik`/`hrr-ik`/`th-ik` (or an ablation label like `th-ik_cs-cap`), matching the output-directory naming produced by `LIBERO_human/scripts/A_humanized_libero_suite.py`. See `docs/command/Make training dataset.md` for the full command set. |
+| `scripts/rebuild_libero_rlds_from_npz.sh` | End-to-end wrapper: NPZ → HDF5 → RLDS, for one `<humanized\|original-joint> <suite> [method]` at a time — `[method]` is `pure-ik`/`liu-ik`/`hrr-ik`/`th-ik` (or an ablation label like `th-ik_cs-cap`), matching the output-directory naming produced by `LIBERO-humanized/scripts/A_humanized_libero_suite.py`. See `docs/command/Make training dataset.md` for the full command set. |
 
 Every method — including `th-ik` (ours) and the `original-joint` baseline — gets its own subdirectory under `modified_libero_rlds/`: `modified_libero_rlds/th_ik/`, `.../pure_ik/`, `.../liu_ik/`, `.../hrr_ik/`, `.../original/`. This is how `finetune.py` later distinguishes which method/baseline it's training on; datasets from different methods never collide.
 
@@ -58,7 +58,7 @@ See `docs/command/libero evaluate command.md` for the full recorded command set 
 
 ## 4. Rollout Human-Likeness Scoring
 
-`experiments/robot/libero/A_vla_rollout_hl.py` scores the rollout NPZ files produced above. It does not reimplement the metrics — it adds `../LIBERO_human/scripts` to `sys.path` and imports `evaluate_trajectory`/`METRIC_KEYS`/`WEIGHTS` directly from `A_human_likeness_evaluate.py` in the companion repo, so the metric definitions (`HJL`, `MJE`, `SOAq`, `SOAx`, `EEA`, `UNIFIED`) are identical on both sides of the pipeline.
+`experiments/robot/libero/A_vla_rollout_hl.py` scores the rollout NPZ files produced above. It does not reimplement the metrics — it adds `../LIBERO-humanized/scripts` to `sys.path` and imports `evaluate_trajectory`/`METRIC_KEYS`/`WEIGHTS` directly from `A_human_likeness_evaluate.py` in the companion repo, so the metric definitions (`HJL`, `MJE`, `SOAq`, `SOAx`, `EEA`, `UNIFIED`) are identical on both sides of the pipeline.
 
 ```bash
 python experiments/robot/libero/A_vla_rollout_hl.py \

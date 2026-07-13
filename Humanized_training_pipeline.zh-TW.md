@@ -2,10 +2,10 @@
 
 > 本文為 `Humanized_training_pipeline.md`（正式版，英文）的繁體中文翻譯，內容應保持同步。若兩者有出入，以英文版為準。
 
-本文說明這個 repo 裡的訓練／評估流程。輸入資料來自姊妹 repo `LIBERO_human`（`humanized.npz`／`humanized_sim.npz` 是怎麼跨五種比較方法——Original、Pure-IK、Liu-IK、HRR-IK、TH-IK/本研究方法——與各項消融實驗產生的，請見 `LIBERO_human/HUMANIZATION_PIPELINE.md`）。本文只涵蓋資料進到 `openvla-oft_human` 之後發生的事。
+本文說明這個 repo 裡的訓練／評估流程。輸入資料來自姊妹 repo `LIBERO-humanized`（`humanized.npz`／`humanized_sim.npz` 是怎麼跨五種比較方法——Original、Pure-IK、Liu-IK、HRR-IK、TH-IK/本研究方法——與各項消融實驗產生的，請見 `LIBERO-humanized/HUMANIZATION_PIPELINE.md`）。本文只涵蓋資料進到 `openvla-oft_human` 之後發生的事。
 
 ```text
-humanized.npz / humanized_sim.npz（來自 LIBERO_human，依方法/suite/任務分）
+humanized.npz / humanized_sim.npz（來自 LIBERO-humanized，依方法/suite/任務分）
     │
     ▼
 資料集轉換 → RLDS
@@ -26,7 +26,7 @@ rollout 人性化程度評分
 |---|---|
 | `experiments/robot/libero/A_npz_to_hdf5.py` | 把回放輸出（`A_libero_joint_replay.py --collect_obs` 產生的 `humanized_sim.npz`／`original_sim.npz`）打包成 HDF5。 |
 | `rlds_dataset_builder/LIBERO_{10,Goal,Object,Spatial}_{humanized,joint}/` | 把 HDF5 轉成 RLDS TFRecord 資料集的 TFDS builder（每個 suite × {humanized, joint} 各一個目錄）。 |
-| `scripts/rebuild_libero_rlds_from_npz.sh` | 端到端包裝腳本：NPZ → HDF5 → RLDS，一次處理一組 `<humanized\|original-joint> <suite> [method]`——`[method]` 是 `pure-ik`／`liu-ik`／`hrr-ik`／`th-ik`（或消融標籤如 `th-ik_cs-cap`），對應 `LIBERO_human/scripts/A_humanized_libero_suite.py` 產生的輸出目錄命名。完整指令集見 `docs/command/Make training dataset.md`。 |
+| `scripts/rebuild_libero_rlds_from_npz.sh` | 端到端包裝腳本：NPZ → HDF5 → RLDS，一次處理一組 `<humanized\|original-joint> <suite> [method]`——`[method]` 是 `pure-ik`／`liu-ik`／`hrr-ik`／`th-ik`（或消融標籤如 `th-ik_cs-cap`），對應 `LIBERO-humanized/scripts/A_humanized_libero_suite.py` 產生的輸出目錄命名。完整指令集見 `docs/command/Make training dataset.md`。 |
 
 每個方法——包括 `th-ik`（本研究方法）和 `original-joint` 基準——都會在 `modified_libero_rlds/` 底下有自己的子目錄：`modified_libero_rlds/th_ik/`、`.../pure_ik/`、`.../liu_ik/`、`.../hrr_ik/`、`.../original/`。這就是 `finetune.py` 之後用來分辨自己在訓練哪個方法/基準的依據；不同方法的資料集不會互相碰撞。
 
@@ -60,7 +60,7 @@ python experiments/robot/libero/run_libero_eval.py \
 
 ## 四、Rollout 人性化程度評分
 
-`experiments/robot/libero/A_vla_rollout_hl.py` 為上面產生的 rollout NPZ 檔評分。它沒有重新實作指標，而是把 `../LIBERO_human/scripts` 加進 `sys.path`，直接從姊妹 repo 的 `A_human_likeness_evaluate.py` import `evaluate_trajectory`／`METRIC_KEYS`／`WEIGHTS`，所以兩邊的指標定義（`HJL`、`MJE`、`SOAq`、`SOAx`、`EEA`、`UNIFIED`）完全一致。
+`experiments/robot/libero/A_vla_rollout_hl.py` 為上面產生的 rollout NPZ 檔評分。它沒有重新實作指標，而是把 `../LIBERO-humanized/scripts` 加進 `sys.path`，直接從姊妹 repo 的 `A_human_likeness_evaluate.py` import `evaluate_trajectory`／`METRIC_KEYS`／`WEIGHTS`，所以兩邊的指標定義（`HJL`、`MJE`、`SOAq`、`SOAx`、`EEA`、`UNIFIED`）完全一致。
 
 ```bash
 python experiments/robot/libero/A_vla_rollout_hl.py \

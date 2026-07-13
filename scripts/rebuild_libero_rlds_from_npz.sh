@@ -10,7 +10,7 @@ if [[ -z "$MODE" || -z "$SUITE" ]]; then
   echo ""
   echo "  method (required for MODE=humanized): pure-ik | liu-ik | hrr-ik | th-ik"
   echo "         (or any other method label matching a directory under"
-  echo "          <LIBERO_human>/scripts/result/humanized_npz/<suite>_humanized_<method>[_<ablation-suffix>],"
+  echo "          <LIBERO-humanized>/scripts/result/humanized_npz/<suite>_humanized_<method>[_<ablation-suffix>],"
   echo "          e.g. 'th-ik_cs-cap' for the controller-tracking ablation)"
   echo ""
   echo "  Examples:"
@@ -22,7 +22,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
-SIBLING_LIBERO_ROOT="$(dirname "$REPO_ROOT")/LIBERO_human"
+SIBLING_LIBERO_ROOT="$(dirname "$REPO_ROOT")/LIBERO-humanized"
 cd "$REPO_ROOT"
 
 case "$SUITE" in
@@ -46,7 +46,7 @@ case "$MODE" in
     fi
     # Method label -> humanized_npz directory suffix produced by
     # A_humanized_libero_suite.py's method_label() naming (see
-    # LIBERO_human/HUMANIZATION_PIPELINE.md §3-4). Matches the suite
+    # LIBERO-humanized/HUMANIZATION_PIPELINE.md §3-4). Matches the suite
     # script's naming exactly, so no manual comment-toggling needed.
     NPZ_BASE_HUMAN="$SIBLING_LIBERO_ROOT/scripts/result/humanized_npz/${SUITE}_humanized_${METHOD}"
 

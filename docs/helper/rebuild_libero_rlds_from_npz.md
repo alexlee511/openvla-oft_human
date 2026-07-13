@@ -124,7 +124,7 @@ Use this for:
 cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/humanized_npz/libero_10_humanized \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO-humanized/scripts/result/humanized_npz/libero_10_humanized \
   --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_10_humanized_no_noops \
   --filter_noops \
   --require_success
@@ -145,7 +145,7 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/humanized_npz/libero_spatial_humanized \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO-humanized/scripts/result/humanized_npz/libero_spatial_humanized \
   --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_spatial_humanized_no_noops \
   --filter_noops \
   --require_success
@@ -166,7 +166,7 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/humanized_npz/libero_goal_humanized \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO-humanized/scripts/result/humanized_npz/libero_goal_humanized \
   --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_goal_humanized_no_noops \
   --filter_noops \
   --require_success
@@ -187,7 +187,7 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/humanized_npz/libero_object_humanized \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO-humanized/scripts/result/humanized_npz/libero_object_humanized \
   --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_object_humanized_no_noops \
   --filter_noops \
   --require_success
@@ -214,7 +214,7 @@ Supported builders in this repo:
 cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/original_npz/libero_10 \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO-humanized/scripts/result/original_npz/libero_10 \
   --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_10_joint_no_noops \
   --filter_noops \
   --require_success
@@ -235,7 +235,7 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/original_npz/libero_spatial \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO-humanized/scripts/result/original_npz/libero_spatial \
   --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_spatial_joint_no_noops \
   --filter_noops \
   --require_success
@@ -256,7 +256,7 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/original_npz/libero_goal \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO-humanized/scripts/result/original_npz/libero_goal \
   --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_goal_joint_no_noops \
   --filter_noops \
   --require_success
@@ -277,7 +277,7 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/original_npz/libero_object \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO-humanized/scripts/result/original_npz/libero_object \
   --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_object_joint_no_noops \
   --filter_noops \
   --require_success

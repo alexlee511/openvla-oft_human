@@ -8,7 +8,7 @@ python experiments/robot/libero/A_generate_humanized_initial_poses.py --suite_na
 # Override which humanized_npz dir to read initial poses from (default is auto-detected):
 python experiments/robot/libero/A_generate_humanized_initial_poses.py \
   --suite_name libero_10 \
-  --npz_root ../LIBERO_human/scripts/result/humanized_npz/libero_10_humanized_th-ik
+  --npz_root ../LIBERO-humanized/scripts/result/humanized_npz/libero_10_humanized_th-ik
 
 # ─── Step 2: evaluate a checkpoint ───
 # Format command:
