@@ -43,8 +43,7 @@ import numpy as np
 THIS_FILE = Path(__file__).resolve()
 LIBERO_SCRIPT_CANDIDATES = [
     THIS_FILE.parents[3] / "LIBERO" / "scripts",
-    THIS_FILE.parents[4] / "LIBERO" / "scripts",
-    Path("/home/vsp1323/alex/LIBERO/scripts"),
+    THIS_FILE.parents[4] / "LIBERO_human" / "scripts",
 ]
 
 for candidate in LIBERO_SCRIPT_CANDIDATES:

@@ -160,5 +160,5 @@ class Libero10Humanized(MultiThreadedDatasetBuilder):
     def _split_paths(self):
         """Define filepaths for data splits."""
         return {
-            "train": glob.glob("/home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_10_humanized_no_noops/*.hdf5"),
+            "train": glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "LIBERO", "libero", "datasets", "libero_10_humanized_no_noops", "*.hdf5")),
         }

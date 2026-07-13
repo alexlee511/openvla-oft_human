@@ -49,13 +49,13 @@ Pipeline:
 
 Usage (single task):
     python experiments/robot/libero/A_npz_to_hdf5.py \\
-        --task_root /home/vsp1323/LIBERO/scripts/libero_10_humanized/KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it_demo \\
+        --task_root ../LIBERO_human/scripts/result/humanized_npz/libero_10_humanized/KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it_demo \\
         --output_dir ./LIBERO/libero/datasets/libero_10_humanized_noops \\
         --filter_noops --require_success
 
 Usage (all tasks in a directory):
     python experiments/robot/libero/A_npz_to_hdf5.py \\
-        --task_roots_dir /home/vsp1323/LIBERO/scripts/libero_10_humanized \\
+        --task_roots_dir ../LIBERO_human/scripts/result/humanized_npz/libero_10_humanized \\
         --output_dir ./LIBERO/libero/datasets/libero_10_humanized_noops \\
         --filter_noops --require_success
 """
@@ -106,7 +106,7 @@ def load_aligned_joint_position_actions(sim_data):
 def discover_demos_from_task_root(task_root, require_success=False):
     """
     Given a task root like:
-        /home/vsp1323/LIBERO/scripts/KITCHEN_SCENE3_..._demo/
+        ../LIBERO_human/scripts/result/humanized_npz/<suite>/KITCHEN_SCENE3_..._demo/
     Find all *_sim.npz files in:
         <task_root>/humanized_demo/demo_XX/humanized_sim.npz   (humanized)
         <task_root>/original_demo/demo_XX/original_sim.npz     (original replay)
@@ -346,11 +346,11 @@ if __name__ == "__main__":
     source.add_argument(
         "--task_root", type=str, default=None,
         help="Single task root folder, e.g. "
-             "/home/vsp1323/LIBERO/scripts/KITCHEN_SCENE3_..._demo",
+             "../LIBERO_human/scripts/result/humanized_npz/<suite>/KITCHEN_SCENE3_..._demo",
     )
     source.add_argument(
         "--task_roots_dir", type=str, default=None,
-        help="Directory of task root folders, e.g. /home/vsp1323/LIBERO/scripts",
+        help="Directory of task root folders, e.g. ../LIBERO_human/scripts/result/humanized_npz/<suite>",
     )
 
     parser.add_argument(

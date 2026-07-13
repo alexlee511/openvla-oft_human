@@ -79,8 +79,6 @@ action[-1, :7] = joint_states_obs[-1]
 
 and preserves the original gripper command.
 
-That makes the packed HDF5 follow the same joint-target convention as `A_convert_libero_to_joint.py`.
-
 ## 2. Supported builders in this repo
 
 ### Original EEF builders
@@ -109,7 +107,7 @@ That makes the packed HDF5 follow the same joint-target convention as `A_convert
 All commands below assume the repo root is:
 
 ```bash
-cd /home/vsp1323/alex/openvla-oft_human
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 ```
 
 ### 3.1 Humanized joint datasets from NPZ
@@ -123,19 +121,19 @@ Use this for:
 #### LIBERO-10 Humanized
 
 ```bash
-cd /home/vsp1323/alex/openvla-oft_human
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/result/humanized_npz/libero_10_humanized \
-  --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_10_humanized_no_noops \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/humanized_npz/libero_10_humanized \
+  --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_10_humanized_no_noops \
   --filter_noops \
   --require_success
 
-cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_10_humanized
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human/rlds_dataset_builder/LIBERO_10_humanized
 CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
 
 NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1)
-DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_humanized_no_noops/1.0.0
+DEST=/home/vsp1323/Humanized-VLA/openvla-oft_human/modified_libero_rlds/libero_10_humanized_no_noops/1.0.0
 mkdir -p "$DEST"
 cp -r "$NEWEST"/* "$DEST"/
 echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
@@ -144,19 +142,19 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 #### LIBERO-Spatial Humanized
 
 ```bash
-cd /home/vsp1323/alex/openvla-oft_human
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/result/humanized_npz/libero_spatial_humanized \
-  --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_spatial_humanized_no_noops \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/humanized_npz/libero_spatial_humanized \
+  --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_spatial_humanized_no_noops \
   --filter_noops \
   --require_success
 
-cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_Spatial_humanized
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human/rlds_dataset_builder/LIBERO_Spatial_humanized
 CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
 
 NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1)
-DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_spatial_humanized_no_noops/1.0.0
+DEST=/home/vsp1323/Humanized-VLA/openvla-oft_human/modified_libero_rlds/libero_spatial_humanized_no_noops/1.0.0
 mkdir -p "$DEST"
 cp -r "$NEWEST"/* "$DEST"/
 echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
@@ -165,19 +163,19 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 #### LIBERO-Goal Humanized
 
 ```bash
-cd /home/vsp1323/alex/openvla-oft_human
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/result/humanized_npz/libero_goal_humanized \
-  --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_goal_humanized_no_noops \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/humanized_npz/libero_goal_humanized \
+  --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_goal_humanized_no_noops \
   --filter_noops \
   --require_success
 
-cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_Goal_humanized
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human/rlds_dataset_builder/LIBERO_Goal_humanized
 CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
 
 NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1)
-DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_goal_humanized_no_noops/1.0.0
+DEST=/home/vsp1323/Humanized-VLA/openvla-oft_human/modified_libero_rlds/libero_goal_humanized_no_noops/1.0.0
 mkdir -p "$DEST"
 cp -r "$NEWEST"/* "$DEST"/
 echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
@@ -186,19 +184,19 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 #### LIBERO-Object Humanized
 
 ```bash
-cd /home/vsp1323/alex/openvla-oft_human
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/result/humanized_npz/libero_object_humanized \
-  --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_object_humanized_no_noops \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/humanized_npz/libero_object_humanized \
+  --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_object_humanized_no_noops \
   --filter_noops \
   --require_success
 
-cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_Object_humanized
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human/rlds_dataset_builder/LIBERO_Object_humanized
 CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
 
 NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1)
-DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_object_humanized_no_noops/1.0.0
+DEST=/home/vsp1323/Humanized-VLA/openvla-oft_human/modified_libero_rlds/libero_object_humanized_no_noops/1.0.0
 mkdir -p "$DEST"
 cp -r "$NEWEST"/* "$DEST"/
 echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
@@ -213,19 +211,19 @@ Supported builders in this repo:
 - `libero_object_joint_no_noops`
 
 ```bash
-cd /home/vsp1323/alex/openvla-oft_human
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/result/original_npz/libero_10 \
-  --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_10_joint_no_noops \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/original_npz/libero_10 \
+  --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_10_joint_no_noops \
   --filter_noops \
   --require_success
 
-cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_10_joint
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human/rlds_dataset_builder/LIBERO_10_joint
 CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
 
 NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1)
-DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_10_joint_no_noops/1.0.0
+DEST=/home/vsp1323/Humanized-VLA/openvla-oft_human/modified_libero_rlds/libero_10_joint_no_noops/1.0.0
 mkdir -p "$DEST"
 cp -r "$NEWEST"/* "$DEST"/
 echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
@@ -234,19 +232,19 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 #### LIBERO-Spatial Original Joint
 
 ```bash
-cd /home/vsp1323/alex/openvla-oft_human
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/result/original_npz/libero_spatial \
-  --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_spatial_joint_no_noops \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/original_npz/libero_spatial \
+  --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_spatial_joint_no_noops \
   --filter_noops \
   --require_success
 
-cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_Spatial_joint
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human/rlds_dataset_builder/LIBERO_Spatial_joint
 CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
 
 NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1)
-DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_spatial_joint_no_noops/1.0.0
+DEST=/home/vsp1323/Humanized-VLA/openvla-oft_human/modified_libero_rlds/libero_spatial_joint_no_noops/1.0.0
 mkdir -p "$DEST"
 cp -r "$NEWEST"/* "$DEST"/
 echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
@@ -255,19 +253,19 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 #### LIBERO-Goal Original Joint
 
 ```bash
-cd /home/vsp1323/alex/openvla-oft_human
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/result/original_npz/libero_goal \
-  --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_goal_joint_no_noops \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/original_npz/libero_goal \
+  --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_goal_joint_no_noops \
   --filter_noops \
   --require_success
 
-cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_Goal_joint
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human/rlds_dataset_builder/LIBERO_Goal_joint
 CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
 
 NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1)
-DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_goal_joint_no_noops/1.0.0
+DEST=/home/vsp1323/Humanized-VLA/openvla-oft_human/modified_libero_rlds/libero_goal_joint_no_noops/1.0.0
 mkdir -p "$DEST"
 cp -r "$NEWEST"/* "$DEST"/
 echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
@@ -276,19 +274,19 @@ echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
 #### LIBERO-Object Original Joint
 
 ```bash
-cd /home/vsp1323/alex/openvla-oft_human
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human
 
 python experiments/robot/libero/A_npz_to_hdf5.py \
-  --task_roots_dir /home/vsp1323/alex/LIBERO/scripts/result/original_npz/libero_object \
-  --output_dir /home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_object_joint_no_noops \
+  --task_roots_dir /home/vsp1323/Humanized-VLA/LIBERO_human/scripts/result/original_npz/libero_object \
+  --output_dir /home/vsp1323/Humanized-VLA/openvla-oft_human/LIBERO/libero/datasets/libero_object_joint_no_noops \
   --filter_noops \
   --require_success
 
-cd /home/vsp1323/alex/openvla-oft_human/rlds_dataset_builder/LIBERO_Object_joint
+cd /home/vsp1323/Humanized-VLA/openvla-oft_human/rlds_dataset_builder/LIBERO_Object_joint
 CUDA_VISIBLE_DEVICES="" conda run -n openvla-oft tfds build --overwrite
 
 NEWEST=$(ls -td ~/tensorflow_datasets/*/1.0.0 | head -1)
-DEST=/home/vsp1323/alex/openvla-oft_human/modified_libero_rlds/libero_object_joint_no_noops/1.0.0
+DEST=/home/vsp1323/Humanized-VLA/openvla-oft_human/modified_libero_rlds/libero_object_joint_no_noops/1.0.0
 mkdir -p "$DEST"
 cp -r "$NEWEST"/* "$DEST"/
 echo "Copied -> $DEST ($(ls "$DEST"/*.tfrecord* 2>/dev/null | wc -l) shards)"
@@ -305,72 +303,18 @@ bash scripts/rebuild_libero_rlds_from_npz.sh original-joint libero_10
 bash scripts/rebuild_libero_rlds_from_npz.sh original-joint libero_goal
 ```
 
-You can run fine-tuning directly with:
+## 4. Fine-tuning
+
+Fine-tuning commands live in a single place — **[`docs/command/finetune command.md`](../command/finetune%20command.md)** — so they don't drift. This note only covers the NPZ → HDF5 → RLDS rebuild that produces the datasets those commands train on.
+
+Once the RLDS dataset exists, run fine-tuning with the wrapper (it derives `--data_root_dir`/`--run_root_dir` from `[method]` and prefixes `--run_id_note` with the method automatically):
 
 ```bash
-bash scripts/finetune_libero_from_rlds.sh humanized libero_10
+bash scripts/finetune_libero_from_rlds.sh humanized      libero_10 th-ik
 bash scripts/finetune_libero_from_rlds.sh original-joint libero_object
 ```
 
-## 4. Fine-tuning commands
-
-### Original joint LIBERO-10
-
-```bash
-cd /home/vsp1323/alex/openvla-oft_human
-
-torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
-  --vla_path openvla/openvla-7b \
-  --data_root_dir /nfs/Workspace/Alex/openvla-oft_human/modified_libero_rlds \
-  --dataset_name libero_10_joint_no_noops \
-  --run_root_dir /nfs/Workspace/Alex/openvla-oft_human/runs/openvla-oft_joint_libero_10 \
-  --use_l1_regression True \
-  --use_diffusion False \
-  --use_film False \
-  --num_images_in_input 2 \
-  --use_proprio True \
-  --batch_size 8 \
-  --grad_accumulation_steps 8 \
-  --learning_rate 5e-4 \
-  --num_steps_before_decay 15000 \
-  --max_steps 20000 \
-  --save_freq 10000 \
-  --save_latest_checkpoint_only False \
-  --image_aug True \
-  --lora_rank 32 \
-  --wandb_entity alexlee511-national-taipei-university-of-technology \
-  --wandb_project openvla-oft \
-  --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state
-```
-
-### Humanized joint LIBERO-10
-
-```bash
-cd /home/vsp1323/alex/openvla-oft_human
-
-torchrun --standalone --nnodes 1 --nproc-per-node 1 vla-scripts/finetune.py \
-  --vla_path openvla/openvla-7b \
-  --data_root_dir /nfs/Workspace/Alex/openvla-oft_human/modified_libero_rlds \
-  --dataset_name libero_10_humanized_no_noops \
-  --run_root_dir /nfs/Workspace/Alex/openvla-oft_human/runs/openvla-oft_humanized_libero_10 \
-  --use_l1_regression True \
-  --use_diffusion False \
-  --use_film False \
-  --num_images_in_input 2 \
-  --use_proprio True \
-  --batch_size 8 \
-  --grad_accumulation_steps 8 \
-  --learning_rate 5e-4 \
-  --num_steps_before_decay 15000 \
-  --max_steps 20000 \
-  --save_freq 10000 \
-  --save_latest_checkpoint_only False \
-  --image_aug True \
-  --lora_rank 32 \
-  --wandb_entity alexlee511-national-taipei-university-of-technology \
-  --wandb_project openvla-oft_human \
-  --run_id_note parallel_dec--8_acts_chunk--continuous_acts--L1_regression--3rd_person_img--wrist_img--proprio_state
-```
+See `docs/command/finetune command.md` for the full `torchrun` command, the per-method/suite argument table, and the resume-from-checkpoint recipe.
 
 ## 5. Important notes
 

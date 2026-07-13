@@ -27,6 +27,9 @@ from typing import Dict, List, Tuple
 import h5py
 import numpy as np
 
+REPO_ROOT = Path(__file__).resolve().parents[4]
+
+
 from experiments.robot.libero.run_libero_eval import GenerateConfig, initialize_model
 from experiments.robot.robot_utils import get_action, set_seed_everywhere
 
@@ -371,7 +374,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dataset_dir",
         type=str,
-        default="/home/vsp1323/alex/openvla-oft_human/LIBERO/libero/datasets/libero_10_humanized_no_noops",
+        default=str(REPO_ROOT / "LIBERO/libero/datasets/libero_10_humanized_no_noops"),
     )
     parser.add_argument("--task_suite_name", type=str, default="libero_10")
     parser.add_argument("--unnorm_key", type=str, default="")
